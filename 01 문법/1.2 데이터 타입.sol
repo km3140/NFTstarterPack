@@ -95,20 +95,25 @@ contract DataType {
 
 //  ❗enum (열거형)
 //    연속된 정수로 상태를 관리하는 타입
+//    상태 변화를 나타내는데 유용함
 //    ex)
-        enum Color {red,green,orange} // 중괄호 뒤에는 세미콜론 안붙임
+        enum Color {red,green,orange}
+        // 👆 red->0, green->1, orange->2
         Color public trafficLight; // 초기값은 0
 
-        function setState(Color _c) public {
+        function setState(Color _c) public { // 0,1,2 이외의 값을 전달하면 에러 발생
           trafficLight = _c; 
         }
 
         function getState() public view returns(Color){
-          return trafficLight; //
+          return trafficLight;
         }
 
-        function 
-// 
-// 
-// 
+        function setOrange() public {
+          trafficLight = Color.orange; // 2가 들어감
+        }
+
+        function reset() public{
+          delete trafficLight; // trafficLight의 상태를 0으로 초기화
+        }
 }

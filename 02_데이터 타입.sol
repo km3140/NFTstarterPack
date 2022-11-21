@@ -5,12 +5,12 @@ pragma solidity 0.8.17;
 contract DataType {
 /*
   솔리디티에서의 8가지 데이터타입
-    값 타입 : stack 에 저장
+    값 타입 : stack 에서 관리
       bool
       int
       uint
       address
-    참조 타입 : heap?에 저장해놓고 stack에는 참조값만 저장
+    참조 타입 : 자유로운 크기의 공간(memory?heap?)에 저장해놓고 stack에는 그 공간의 참조값만 저장
       string
       array
       struct

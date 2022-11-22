@@ -64,7 +64,7 @@ contract DataType {
         mapping(address => uint) balance;
         // 👆 mapping(키의 타입 => 키 값의 타입)매핑이름;  으로 선언
 
-        function seBalance(address _arr, uint _n) public{
+        function setBalance(address _arr, uint _n) public{
           balance[_arr] = _n; // balance에 _arr=>_n 쌍 추가, _arr키가 이미 있다면 값 수정
         }
 

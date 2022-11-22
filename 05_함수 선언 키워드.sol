@@ -10,6 +10,7 @@ contract Function{
   
   // 1.접근제어자 [public|private|external|internal]
   //   가시성이란 함수 또는 변수를 호출할 수 있는 범위를 말하는데, 가시성을 지정할 때 사용하는 키워드임 (visibility modifier)
+  //   함수에 없으면 오류남
   //   ▪ public : 모든 곳에서 호출 가능
   //   ▪ private : 함수를 정의한 콘트랙트 내에서만 호출 가능. 상속받은 콘트랙트에서 호출 불가
   //   ▪ internal : 함수를 정의한 콘트랙트와 상속받은 콘트랙트에서 모두 호출 가능

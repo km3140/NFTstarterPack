@@ -6,7 +6,7 @@ contract Father{
   string public familyName = "Kim";
   string public givenName = "Ill";
   uint256 public money = 100;
-                                    // 👇 0.7 부터 public 안 붙어도
+                                    // 👇 0.7 부터 public 안 붙어도 됨
   constructor(string memory _givenName) {
     givenName = _givenName;
   }

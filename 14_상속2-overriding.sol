@@ -31,3 +31,6 @@ contract Son is Father("Jung"){
   }
 
 }
+
+
+// virtual에 override

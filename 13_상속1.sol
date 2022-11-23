@@ -2,11 +2,12 @@
 
 pragma solidity ^0.8.17;
 
+// 상속 하는 법 : contract 상속 받을 컨트랙트 is 상속해 줄 컨트랙트
+
 contract Father{
   string public familyName = "Kim";
   string public givenName = "Ill";
   uint256 public money = 100;
-                                    // 👇 0.7 부터 public 안 붙어도 됨
   constructor(string memory _givenName) {
     givenName = _givenName;
   }
@@ -21,7 +22,7 @@ contract Father{
     return money;
   }
 }
-                      // 👇 Father constructor의 argument
+          // 👇is키워드   👇 Father constructor의 argument
 contract Son is Father("Jung"){
 
   //getGivenName() => Jung

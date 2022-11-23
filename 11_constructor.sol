@@ -6,7 +6,7 @@ contract A{
 
   string public name;
   uint256 public age;
-
+                                            // 👇 0.7 부터 public 안 붙어도 됨
   constructor(string memory _name, uint256 _age){ // 👈 콘트랙트가 최초 생성될 때 한 번 실행 (JS와 비슷)
     name = _name;
     age = _age;

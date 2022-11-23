@@ -29,7 +29,7 @@ contract Father{
 contract Son is Father{
   event SonName(string name);
   function who() public override{
-    super.who(); // 👈 15줄짜리 Father의 who()의 내용이 들어감
+    super.who(); // 👈 15줄짜리 Father의 who()의 내용 대신 super.who() 들어감
     emit SonName("Jung");
   }
 }

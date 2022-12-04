@@ -21,33 +21,14 @@ contract OriginTokenContract is IKIP7 {
 //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ메인 컨트랙트ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 contract hatjaeContract{
-// -[ ] racing history 자료구조  :
-// [ struct{ address : 0x000, prize : 0,  coinRank: [코인순서], winner: 0 }, … ]
-// 월요일 00시에 사용하는 당첨자 선정 함수에서 기록
-
-// - [ ]  라운드 진행중 유저의 티켓 자료구조: 라운드→유저주소→티켓배열[ 티켓정보배열[코인순서] ]
-// ex) round → userAddress → tickets[ ticket[ bnb,eth,klay,ripple ], … ]
-// (유저의 이름같은 세부정보를 넣는다면 티켓배열을 구조체로 만들 수 있을 듯?)
-// 유저의 복권 개수는 티켓배열.length
-
-// 이중배열 만드는 법? string[][]?
-// 2차원 배열 시 다른 언어의 순서와 반대임 (예: array[1][2] → array[2][1]) ?
-//   T[][k] x;  // k개의 T를 담을 수 있는 가변 배열 x선언
-                // 일반 적인 언어에서는 T[k][] 한다.
-//         👇바깥쪽배열
-// string[][]
-//       👆안쪽배열  
 
 // 수익률 계산 공식(uint말고 int로 해야할듯) : (현재가격 - 매수가격)/매수가격 * 100 
 
-
-
-
-    // 컨트랙 배포자
     address owner;
 
-    //티켓 가격 (클레이)
-    uint8 ticketPrice; 
+    uint ticketPrice = 1e18; // e18 = *10**18 ❗❗
+
+    uint round = 0; // 0라운드부터 시작(?) (배열 인덱스랑 맞추려고)
 
     // 라운드 진행상황
     enum RoundStatus { 
@@ -56,10 +37,11 @@ contract hatjaeContract{
     }
     RoundStatus public roundStatus; 
 
-    // 라운드 진행 중 유저의 티켓 정보           👇 코인 개수
-    mapping (uint => mapping(address => string[10][])) ticketInfo;
-    mapping (address => string[10][]) ticketInfo2;
-
+    // 라운드 진행 중 유저의 티켓 정보
+    // 라운드 => 유저주소 => [ [코인순서], [코인순서], ... ]
+    //                                        👇 코인 4개 선택 가능
+    mapping (uint => mapping(address => string[4][])) ticketBox;
+    mapping (address => string[4][]) ticketBox2;
 
     // 레이싱 시작 시 스냅샷 찍어놓고 상승률 계산
     struct snapshot {
@@ -75,5 +57,15 @@ contract hatjaeContract{
         uint bnb;   // 바이낸스코인
     }
 
-    //
+    // 라운드별 레이싱결과의 이력
+    struct racingResult{
+        address userAddress;
+        uint prize;
+        string[] coinRank;
+        uint winner;
+    }
+    racingResult[] racingHistory;
+
+
+
 }

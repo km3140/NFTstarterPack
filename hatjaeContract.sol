@@ -41,20 +41,19 @@ contract hatjaeContract{
     // 라운드 => 유저주소 => [ [코인순서], [코인순서], ... ]
     //                                        👇 코인 4개 선택 가능
     mapping (uint => mapping(address => string[4][])) ticketBox;
-    mapping (address => string[4][]) ticketBox2;
 
     // 레이싱 시작 시 스냅샷 찍어놓고 상승률 계산
     struct snapshot {
-        uint btc;   // 비트코인
-        uint eth;   // 이더리움
-        uint xrp;   // 리플
-        uint wemix; // 위믹스
-        uint klay;  // 클레이
-        uint ksp;   // 클레이스왑
-        uint bora;  // 보라
-        uint orc;   // 오르빗체인
-        uint gala;  // 갈라
-        uint bnb;   // 바이낸스코인
+        string btc;   // 비트코인
+        string eth;   // 이더리움
+        string xrp;   // 리플
+        string wemix; // 위믹스
+        string klay;  // 클레이
+        string ksp;   // 클레이스왑
+        string bora;  // 보라
+        string orc;   // 오르빗체인
+        string gala;  // 갈라
+        string bnb;   // 바이낸스코인
     }
 
     // 라운드별 레이싱결과의 이력
@@ -66,6 +65,13 @@ contract hatjaeContract{
     }
     racingResult[] racingHistory;
 
+//---------------------------------------
 
-
+    // 티켓 사기
+    function buyTicket(string memory first, string memory second, string memory third, string memory fourth) public payable{
+        require(roundStatus == RoundStatus.funding, 'Tickets are only available during the week'); // 티켓은 주중에만 살 수 있다
+        require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
+        require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
+        ticketBox[round][msg.sender][].push([bnb,orc,gala,btc]);
+    }
 }

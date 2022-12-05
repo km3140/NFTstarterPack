@@ -39,7 +39,7 @@ contract caller{
   // 1. 송금하기
   function transferEther(address payable _to) public payable{
     (bool success,) = _to.call{value: msg.value}("");
-    require(success,"failed to transfer ether");
+    require(success,"failed to transfer ether");//👆 ("") 생략하면 안됨
   }
 
   // 2. 외부 스마트 컨트랙 함수 부르기 

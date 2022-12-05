@@ -44,8 +44,8 @@ contract MyContract{
 	// balance끼리 나눠서 이더의 현재 달러가격 구하기
     function dollarPerEth() public view returns(uint){
         //              oUSDT의 decimal(6)에 oETH를 맞춤 👇
-        uint a = oETH.balanceOf(oETH_oUSDT_address)/10**12;
-        uint b = oUSDT.balanceOf(oETH_oUSDT_address); 
-        return b/a;
+        uint eth = oETH.balanceOf(oETH_oUSDT_address)/10**12;
+        uint usdt = oUSDT.balanceOf(oETH_oUSDT_address); 
+        return usdt/eth;
     }
 }

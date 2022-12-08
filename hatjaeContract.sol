@@ -154,8 +154,6 @@ contract TokenPrice{
 
 contract HatjaeContract is TokenPrice{
 
-// 수익률 계산 공식(uint말고 int로 해야할듯) : (현재가격 - 매수가격)/매수가격 * 100 
-
     // 컨트랙트 배포자
     address owner;
 
@@ -174,13 +172,13 @@ contract HatjaeContract is TokenPrice{
     //                                        👇 코인 4개 선택 가능
     mapping (uint => mapping(address => string[4][])) ticketBox;
 
-    // 레이싱 시작 시 스냅샷 찍어놓고 상승률 계산
+    // 토요일 00시에 찍을 스냅샷
     struct Snapshot {
         uint btc;   // 비트코인
         uint eth;   // 이더리움
         uint xrp;   // 리플
+        uint klay;  // 클레이튼
         uint wemix; // 위믹스
-        uint klay;  // 클레이
         uint ksp;   // 클레이스왑
         uint bora;  // 보라
         uint orc;   // 오르빗체인
@@ -193,7 +191,7 @@ contract HatjaeContract is TokenPrice{
     struct racingResult{
         address userAddress;
         uint prize;
-        string[] coinRank;
+        string[] tokenRank;
         uint winner;
     }
     racingResult[] racingHistory;
@@ -205,25 +203,38 @@ contract HatjaeContract is TokenPrice{
         _;
     }
 
+    modifier isWeekdays{
+        require(
+        roundStartTime <= block.timestamp && block.timestamp < roundStartTime + 5 days,
+        "It's not the weekdays now"
+        );
+        _;
+    }
+
+    modifier isWeekend{
+        require(
+        roundStartTime + 5 days <= block.timestamp && block.timestamp < roundStartTime + 1 weeks,
+        "It's not the weekend now"
+        );
+        _;
+    }
+
 //----------------함수-----------------
 
     // 티켓 사기
-    function buyTicket(string memory _first, string memory _second, string memory _third, string memory _fourth) public payable{
-        require(
-            roundStartTime <= block.timestamp && block.timestamp < roundStartTime + 5 days,
-            'Tickets are only available during the week'
-            ); // 티켓은 주중에만 살 수 있다
-        require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
-        require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
-        ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+    function buyTicket(
+        string memory _first,
+        string memory _second,
+        string memory _third,
+        string memory _fourth
+        ) public isWeekdays payable{
+      require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
+      require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
+      ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
     }
 
     // 레이싱 시작 시 스냅샷
-    function takeSnapshot() public onlyOwner returns(Snapshot memory){
-        require(
-            roundStartTime + 5 days <= block.timestamp && block.timestamp < roundStartTime + 1 weeks, 
-            'race starts as soon as Saturday comes'
-            ); // 토요일 00시 이후에만 시작
+    function racingStart() public onlyOwner isWeekend returns(Snapshot memory){
         snapshot = Snapshot(
             TokenPrice.getBtc(),
             TokenPrice.getEth(),
@@ -239,7 +250,22 @@ contract HatjaeContract is TokenPrice{
         return snapshot;
     }
 
-    function currentRank() public returns() // bnbRank-> 상승률(int, decimals=6?) || CoinRank 구조체 안에 int bnb = 상승률 ...
-    // 공통적으로 리턴할 것 : 상승률 순위 배열 (sorting?)
+    // 수익률 계산 후 순서대로 반환 [비트코인, 이더리움, 리플, 클레이튼, 위믹스, 클레이스왑, 보라, 오르빗체인, 마브렉스, bnb] 
+    function getCurrentRateOfIncrease() public isWeekend view returns(int[10] memory){
+        int btc = (int(TokenPrice.getBtc()) - int(snapshot.btc)) / int(snapshot.btc) * 100;
+        int eth = (int(TokenPrice.getEth()) - int(snapshot.eth)) / int(snapshot.eth) * 100;
+        int xrp = (int(TokenPrice.getXrp()) - int(snapshot.xrp)) / int(snapshot.xrp) * 100;
+        int klay = (int(TokenPrice.getKlay()) - int(snapshot.klay)) / int(snapshot.klay) * 100;
+        int wemix = (int(TokenPrice.getWemix()) - int(snapshot.wemix)) / int(snapshot.wemix) * 100;
+        int ksp = (int(TokenPrice.getKsp()) - int(snapshot.ksp)) / int(snapshot.ksp) * 100;
+        int bora = (int(TokenPrice.getBora()) - int(snapshot.bora)) / int(snapshot.bora) * 100;
+        int orc = (int(TokenPrice.getOrc()) - int(snapshot.orc)) / int(snapshot.orc) * 100;
+        int mbx = (int(TokenPrice.getMbx()) - int(snapshot.mbx)) / int(snapshot.mbx) * 100;
+        int bnb = (int(TokenPrice.getBnb()) - int(snapshot.bnb)) / int(snapshot.bnb) * 100;
+        return [btc,eth,xrp,klay,wemix,ksp,bora,orc,mbx,bnb];
+    }
+
+
+
 
 }

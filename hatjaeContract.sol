@@ -20,7 +20,7 @@ contract OriginTokenContract is IKIP7 {
 
 //ㅡㅡㅡㅡㅡㅡㅡㅡㅡ가격 구하기 컨트랙트ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
-contract GetTokenPrice{
+contract TokenPrice{
 
     // 가격이 작은 토큰이 원하는 decimals만큼 자릿수가 더 많아야한다
     // ex ) eth-usdt에서 리턴값이 7decimals를 원할 때 : usdt가 decimals가 7만큼 더 많아야한다
@@ -28,32 +28,32 @@ contract GetTokenPrice{
     // 토큰 가격의 소수점을 몇 자리까지 표현할 건지
     uint8 decimals = 6; // 기본값 6
 
-    OriginTokenContract public oUSDT;
-    OriginTokenContract public oETH;
-    OriginTokenContract public oWBTC;
-    OriginTokenContract public oXRP;
-    OriginTokenContract public WEMIX;
-    OriginTokenContract public KSP;
-    OriginTokenContract public BORA;
-    OriginTokenContract public oORC;
-    OriginTokenContract public MBX;
-    OriginTokenContract public oBNB;
-    OriginTokenContract public oBUSD;
+    OriginTokenContract oUSDT;
+    OriginTokenContract oETH;
+    OriginTokenContract oWBTC;
+    OriginTokenContract oXRP;
+    OriginTokenContract WEMIX;
+    OriginTokenContract KSP;
+    OriginTokenContract BORA;
+    OriginTokenContract oORC;
+    OriginTokenContract MBX;
+    OriginTokenContract oBNB;
+    OriginTokenContract oBUSD;
 
     // 풀 주소
-    address public oETH_oUSDT = 0x029e2A1B2bb91B66bd25027E1C211E5628dbcb93;
-    address public KLAY_oUSDT = 0xD83f1B074D81869EFf2C46C530D7308FFEC18036;
-    // address public oWBTC_oUSDT = 0x9103Beb39283dA9C49B020D6546FD7C39f9bbc5b;
-    address public oWBTC_oETH = 0x2A6A4b0c96cA98eB691a5ddceE3c7b7788c1a8E3;
-    address public oXRP_oUSDT = 0xA2be534e5DD028288625bB376c81A9Eea3D9f0D5;
-    address public WEMIX_oUSDT = 0x2D803838Cb2D40EaCB0207ec4E567e2a8886b47F; //1
-    address public WEMIX_KLAY = 0x917EeD7ae9E7D3b0D875dd393Af93fFf3Fc301F8;  //2
-    address public KSP_oUSDT = 0xE75a6A3a800A2C5123e67e3bde911Ba761FE0705;
-    address public BORA_KLAY = 0xbbcA9B2D17987aCE3E98E376931c540270CE71bB;
-    address public oORC_KLAY = 0xe9ddb7A6994bD9cDF97CF11774A72894597D878B;
-    address public MBX_oUSDT = 0xE847e533C75b1832240c8142672CA295ac6de0cf;
-    address public oBNB_KLAY = 0xE20B9aeAcAC615Da0fdBEB05d4F75E16FA1F6B95; //1
-    address public oBNB_oBUSD = 0x5DA044864a2cbe03546810f6bb2f274a45edB8C6;//2
+    address oETH_oUSDT = 0x029e2A1B2bb91B66bd25027E1C211E5628dbcb93;
+    address KLAY_oUSDT = 0xD83f1B074D81869EFf2C46C530D7308FFEC18036;
+    // address oWBTC_oUSDT = 0x9103Beb39283dA9C49B020D6546FD7C39f9bbc5b;
+    address oWBTC_oETH = 0x2A6A4b0c96cA98eB691a5ddceE3c7b7788c1a8E3;
+    address oXRP_oUSDT = 0xA2be534e5DD028288625bB376c81A9Eea3D9f0D5;
+    address WEMIX_oUSDT = 0x2D803838Cb2D40EaCB0207ec4E567e2a8886b47F; //1
+    address WEMIX_KLAY = 0x917EeD7ae9E7D3b0D875dd393Af93fFf3Fc301F8;  //2
+    address KSP_oUSDT = 0xE75a6A3a800A2C5123e67e3bde911Ba761FE0705;
+    address BORA_KLAY = 0xbbcA9B2D17987aCE3E98E376931c540270CE71bB;
+    address oORC_KLAY = 0xe9ddb7A6994bD9cDF97CF11774A72894597D878B;
+    address MBX_oUSDT = 0xE847e533C75b1832240c8142672CA295ac6de0cf;
+    address oBNB_KLAY = 0xE20B9aeAcAC615Da0fdBEB05d4F75E16FA1F6B95; //1
+    address oBNB_oBUSD = 0x5DA044864a2cbe03546810f6bb2f274a45edB8C6;//2
     
     constructor() {
         oUSDT = OriginTokenContract(0xceE8FAF64bB97a73bb51E115Aa89C17FfA8dD167);
@@ -72,77 +72,77 @@ contract GetTokenPrice{
 //-----------아래 함수들의 return값인 토큰 가격의 소수점 자리수 = decimals----------------
 
     // 비트코인 가격 구하기
-    function getBtcPrice() public view returns(uint){
+    function getBtc() public view returns(uint){
         uint btc = oWBTC.balanceOf(oWBTC_oETH);                // oWBTC의 decimals = 8  
         uint eth = oETH.balanceOf(oWBTC_oETH)/10**(10-decimals); 
         uint ethPerBtc = eth/btc;
-        uint dollarPerBtc = ethPerBtc * getEthPrice() / 10**decimals;
+        uint dollarPerBtc = ethPerBtc * getEth() / 10**decimals;
         return dollarPerBtc;
     }
 
     // 이더리움 가격 구하기
-    function getEthPrice() public view returns(uint){
+    function getEth() public view returns(uint){
         uint eth = oETH.balanceOf(oETH_oUSDT)/10**(12+decimals);   
         uint usdt = oUSDT.balanceOf(oETH_oUSDT);                   // oUSDT의 decimals = 6
         return usdt/eth;
     }
 
     // 클레이 가격 구하기
-    function getKlayPrice() public view returns(uint){
+    function getKlay() public view returns(uint){
         uint klay = KLAY_oUSDT.balance/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(KLAY_oUSDT);
         return usdt/klay;
     }
 
     // 리플 가격 구하기
-    function getXrpPrice() public view returns(uint){
+    function getXrp() public view returns(uint){
         uint xrp = oXRP.balanceOf(oXRP_oUSDT)/10**(decimals); // oXRP의 decimals = 6
         uint usdt = oUSDT.balanceOf(oXRP_oUSDT);
         return usdt/xrp;
     }
 
     // 위믹스 가격 구하기
-    function getWemixPrice() public view returns(uint){
+    function getWemix() public view returns(uint){
         uint wemix = WEMIX.balanceOf(WEMIX_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(WEMIX_oUSDT);
         return usdt/wemix;
     }
 
     // 클레이스왑 가격 구하기
-    function getKspPrice() public view returns(uint){
+    function getKsp() public view returns(uint){
         uint ksp = KSP.balanceOf(KSP_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(KSP_oUSDT);
         return usdt/ksp;
     }
 
     // 보라 가격 구하기
-    function getBoraPrice() public view returns(uint){
+    function getBora() public view returns(uint){
         uint bora = BORA.balanceOf(BORA_KLAY)/10**(decimals);
         uint klay = BORA_KLAY.balance;
-        uint klayPerBora = klay/bora * getKlayPrice() /10**(decimals);
+        uint klayPerBora = klay/bora * getKlay() /10**(decimals);
         return klayPerBora;
     }
 
     // 오르빗 가격 구하기
-    function getOrcPrice() public view returns(uint){
+    function getOrc() public view returns(uint){
         uint orc = oORC.balanceOf(oORC_KLAY)/10**(decimals);
         uint klay = oORC_KLAY.balance;
-        uint klayPerOrc = klay/orc * getKlayPrice() /10**(decimals);
+        uint klayPerOrc = klay/orc * getKlay() /10**(decimals);
         return klayPerOrc;
     }
 
     // 마브렉스 가격 구하기
-    function getMbxPrice() public view returns(uint){
+    function getMbx() public view returns(uint){
         uint mbx = MBX.balanceOf(MBX_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(MBX_oUSDT);
         return usdt/mbx;
     }
 
     // bnb 가격 구하기 (busd추가해야함)
-    function getBnbPrice() public view returns(uint){
+    function getBnb() public view returns(uint){
         uint bnb = oBNB.balanceOf(oBNB_KLAY)/10**(decimals);
         uint klay = oBNB_KLAY.balance;
-        uint klayPerBnb = klay/bnb * getKlayPrice() /10**(decimals);
+        uint klayPerBnb = klay/bnb * getKlay() /10**(decimals);
         return klayPerBnb;
     }
 
@@ -152,7 +152,7 @@ contract GetTokenPrice{
 
 //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ메인 컨트랙트ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
-contract hatjaeContract{
+contract HatjaeContract is TokenPrice{
 
 // 수익률 계산 공식(uint말고 int로 해야할듯) : (현재가격 - 매수가격)/매수가격 * 100 
 
@@ -176,16 +176,16 @@ contract hatjaeContract{
 
     // 레이싱 시작 시 스냅샷 찍어놓고 상승률 계산
     struct Snapshot {
-        string btc;   // 비트코인
-        string eth;   // 이더리움
-        string xrp;   // 리플
-        string wemix; // 위믹스
-        string klay;  // 클레이
-        string ksp;   // 클레이스왑
-        string bora;  // 보라
-        string orc;   // 오르빗체인
-        string gala;  // 갈라
-        string bnb;   // 바이낸스코인
+        uint btc;   // 비트코인
+        uint eth;   // 이더리움
+        uint xrp;   // 리플
+        uint wemix; // 위믹스
+        uint klay;  // 클레이
+        uint ksp;   // 클레이스왑
+        uint bora;  // 보라
+        uint orc;   // 오르빗체인
+        uint mbx;   // 마브렉스
+        uint bnb;   // 바이낸스코인
     }
     Snapshot snapshot;
 
@@ -208,14 +208,38 @@ contract hatjaeContract{
 //----------------함수-----------------
 
     // 티켓 사기
-    function buyTicket(string memory first, string memory second, string memory third, string memory fourth) public payable{
-        require(roundStartTime <= block.timestamp && block.timestamp < roundStartTime + 5 days, 'Tickets are only available during the week'); // 티켓은 주중에만 살 수 있다
+    function buyTicket(string memory _first, string memory _second, string memory _third, string memory _fourth) public payable{
+        require(
+            roundStartTime <= block.timestamp && block.timestamp < roundStartTime + 5 days,
+            'Tickets are only available during the week'
+            ); // 티켓은 주중에만 살 수 있다
         require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
         require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
-        ticketBox[round][msg.sender].push([first,second,third,fourth]);
+        ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
     }
 
     // 레이싱 시작 시 스냅샷
-    function racingStart() public
+    function takeSnapshot() public onlyOwner returns(Snapshot memory){
+        require(
+            roundStartTime + 5 days <= block.timestamp && block.timestamp < roundStartTime + 1 weeks, 
+            'race starts as soon as Saturday comes'
+            ); // 토요일 00시 이후에만 시작
+        snapshot = Snapshot(
+            TokenPrice.getBtc(),
+            TokenPrice.getEth(),
+            TokenPrice.getXrp(),
+            TokenPrice.getWemix(),
+            TokenPrice.getKlay(),
+            TokenPrice.getKsp(),
+            TokenPrice.getBora(),
+            TokenPrice.getOrc(),
+            TokenPrice.getMbx(),
+            TokenPrice.getBnb()
+        );
+        return snapshot;
+    }
+
+    function currentRank() public returns() // bnbRank-> 상승률(int, decimals=6?) || CoinRank 구조체 안에 int bnb = 상승률 ...
+    // 공통적으로 리턴할 것 : 상승률 순위 배열 (sorting?)
 
 }

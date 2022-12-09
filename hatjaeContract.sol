@@ -148,8 +148,6 @@ contract TokenPrice{
 
 }
 
-
-
 //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ메인 컨트랙트ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
 
 contract HatjaeContract is TokenPrice{
@@ -157,6 +155,9 @@ contract HatjaeContract is TokenPrice{
     // 컨트랙트 배포자
     address owner;
 
+    constructor(){
+        owner = msg.sender;
+    }
 
     // 티켓 가격
     uint ticketPrice = 1e17; // e18 = *10**17 ❗❗      // 1e17 == 0.1klay
@@ -187,14 +188,33 @@ contract HatjaeContract is TokenPrice{
     }
     Snapshot snapshot;
 
+    // 상승률 저장
+    struct Token{
+        string symbol;
+        int rate; 
+    }
+    struct Tokens{
+        Token btc;
+        Token eth;
+        Token xrp;
+        Token wemix;
+        Token klay;
+        Token ksp;
+        Token bora;
+        Token orc;
+        Token mbx;
+        Token bnb;
+    }
+
     // 라운드별 레이싱결과의 이력
-    struct racingResult{
+    mapping( uint => RacingResult ) racingHistory;
+    struct RacingResult{
         address userAddress;
         uint prize;
         string[] tokenRank;
         uint winner;
     }
-    racingResult[] racingHistory;
+    RacingResult[] racingResult;
 
 //---------------modifier---------------
 
@@ -221,51 +241,89 @@ contract HatjaeContract is TokenPrice{
 
 //----------------함수-----------------
 
-    // 티켓 사기
+    // 티켓 사기 (테스트 끝나면 isWeekdays 추가)
     function buyTicket(
         string memory _first,
         string memory _second,
         string memory _third,
         string memory _fourth
-        ) public isWeekdays payable{
+        ) public  payable{
       require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
       require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
       ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
     }
 
-    // 레이싱 시작 시 스냅샷
-    function racingStart() public onlyOwner isWeekend returns(Snapshot memory){
-        snapshot = Snapshot(
-            TokenPrice.getBtc(),
-            TokenPrice.getEth(),
-            TokenPrice.getXrp(),
-            TokenPrice.getWemix(),
-            TokenPrice.getKlay(),
-            TokenPrice.getKsp(),
-            TokenPrice.getBora(),
-            TokenPrice.getOrc(),
-            TokenPrice.getMbx(),
-            TokenPrice.getBnb()
-        );
-        return snapshot;
+    // 레이싱 시작 시 스냅샷 (테스트 끝나면 isWeekend 추가)  
+    function racingStart() public onlyOwner {
+        snapshot.btc= TokenPrice.getBtc();
+        snapshot.eth= TokenPrice.getEth();
+        snapshot.xrp= TokenPrice.getXrp();
+        snapshot.wemix= TokenPrice.getWemix();
+        snapshot.klay= TokenPrice.getKlay();
+        snapshot.ksp= TokenPrice.getKsp();
+        snapshot.bora= TokenPrice.getBora();
+        snapshot.orc= TokenPrice.getOrc();
+        snapshot.mbx= TokenPrice.getMbx();
+        snapshot.bnb= TokenPrice.getBnb();
     }
 
-    // 수익률 계산 후 순서대로 반환 [비트코인, 이더리움, 리플, 클레이튼, 위믹스, 클레이스왑, 보라, 오르빗체인, 마브렉스, bnb] 
-    function getCurrentRateOfIncrease() public isWeekend view returns(int[10] memory){
-        int btc = (int(TokenPrice.getBtc()) - int(snapshot.btc)) / int(snapshot.btc) * 100;
-        int eth = (int(TokenPrice.getEth()) - int(snapshot.eth)) / int(snapshot.eth) * 100;
-        int xrp = (int(TokenPrice.getXrp()) - int(snapshot.xrp)) / int(snapshot.xrp) * 100;
-        int klay = (int(TokenPrice.getKlay()) - int(snapshot.klay)) / int(snapshot.klay) * 100;
-        int wemix = (int(TokenPrice.getWemix()) - int(snapshot.wemix)) / int(snapshot.wemix) * 100;
-        int ksp = (int(TokenPrice.getKsp()) - int(snapshot.ksp)) / int(snapshot.ksp) * 100;
-        int bora = (int(TokenPrice.getBora()) - int(snapshot.bora)) / int(snapshot.bora) * 100;
-        int orc = (int(TokenPrice.getOrc()) - int(snapshot.orc)) / int(snapshot.orc) * 100;
-        int mbx = (int(TokenPrice.getMbx()) - int(snapshot.mbx)) / int(snapshot.mbx) * 100;
-        int bnb = (int(TokenPrice.getBnb()) - int(snapshot.bnb)) / int(snapshot.bnb) * 100;
-        return [btc,eth,xrp,klay,wemix,ksp,bora,orc,mbx,bnb];
+    // 각 토큰 수익률 계산 후 랭킹 집계 (테스트 끝나면 isWeekend 추가)
+    function getCurrentRank() public view returns(Token[10] memory){
+        // 반환용 토큰정보 구조체
+        Tokens memory tokens;
+        tokens.btc.symbol = "btc";
+        tokens.eth.symbol = "eth";
+        tokens.xrp.symbol = "xrp";
+        tokens.wemix.symbol = "wemix";
+        tokens.klay.symbol = "klay";
+        tokens.ksp.symbol = "ksp";
+        tokens.bora.symbol = "bora";
+        tokens.orc.symbol = "orc";
+        tokens.mbx.symbol = "mbx";
+        tokens.bnb.symbol = "bnb";
+
+        // 각 토큰 수익률 계산 [ (현재가격 - 매수가격) * 10^(나타낼 소수점 자리 수) / 매수가격 * 100 ] 
+        tokens.btc.rate = (int(TokenPrice.getBtc()) - int(snapshot.btc))*int(10**decimals) / int(snapshot.btc) * 100;
+        tokens.eth.rate = (int(TokenPrice.getEth()) - int(snapshot.eth))*int(10**decimals) / int(snapshot.eth) * 100;
+        tokens.xrp.rate = (int(TokenPrice.getXrp()) - int(snapshot.xrp))*int(10**decimals) / int(snapshot.xrp) * 100;
+        tokens.klay.rate = (int(TokenPrice.getKlay()) - int(snapshot.klay))*int(10**decimals) / int(snapshot.klay) * 100;
+        tokens.wemix.rate = (int(TokenPrice.getWemix()) - int(snapshot.wemix))*int(10**decimals) / int(snapshot.wemix) * 100;
+        tokens.ksp.rate = (int(TokenPrice.getKsp()) - int(snapshot.ksp))*int(10**decimals) / int(snapshot.ksp) * 100;
+        tokens.bora.rate = (int(TokenPrice.getBora()) - int(snapshot.bora))*int(10**decimals) / int(snapshot.bora) * 100;
+        tokens.orc.rate = (int(TokenPrice.getOrc()) - int(snapshot.orc))*int(10**decimals) / int(snapshot.orc) * 100;
+        tokens.mbx.rate = (int(TokenPrice.getMbx()) - int(snapshot.mbx))*int(10**decimals) / int(snapshot.mbx) * 100;
+        tokens.bnb.rate = (int(TokenPrice.getBnb()) - int(snapshot.bnb))*int(10**decimals) / int(snapshot.bnb) * 100;
+
+        // 임의로 배열에 넣은 후 내림차순 소팅 (랭킹 집계)
+        Token[10] memory tempRank;
+        tempRank[0]=tokens.btc;
+        tempRank[1]=tokens.eth;
+        tempRank[2]=tokens.xrp;
+        tempRank[3]=tokens.klay;
+        tempRank[4]=tokens.wemix;
+        tempRank[5]=tokens.ksp;
+        tempRank[6]=tokens.bora;
+        tempRank[7]=tokens.orc;
+        tempRank[8]=tokens.mbx;
+        tempRank[9]=tokens.bnb;
+
+        // tempRank 내림차순 삽입정렬
+        for(uint i = 1; i < tempRank.length; i++){
+        Token memory temp = tempRank[i];
+        int aux = int(i)-1;
+        while(aux >= 0 && tempRank[uint(aux)].rate < temp.rate){
+            tempRank[uint(aux+1)] = tempRank[uint(aux)];
+            aux--;
+        }
+        tempRank[uint(aux+1)]=temp;
+        }
+
+        return tempRank;
     }
 
-
-
+    // // 당첨자 추첨
+    // function racingEnd() public isWeekdays{
+    //     getCurrentRateOfIncrease();
+    // }
 
 }

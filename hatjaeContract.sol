@@ -173,6 +173,13 @@ contract HatjaeContract is TokenPrice{
     //                                        👇 코인 4개 선택 가능
     mapping (uint => mapping(address => string[4][])) ticketBox;
 
+    // 참가자들의 주소 (당첨자 색출에 사용)
+    // 라운드 => [ 유저주소, 유저주소, ... ]
+    mapping (uint => address[]) buyers;
+
+    // 현재 라운드의 티켓 수
+    mapping( uint => uint ) ticketCount;
+
     // 토요일 00시에 찍을 스냅샷
     struct Snapshot {
         uint btc;   // 비트코인
@@ -239,7 +246,7 @@ contract HatjaeContract is TokenPrice{
         _;
     }
 
-//----------------함수-----------------
+//---------------main function---------------
 
     // 티켓 사기 (테스트 끝나면 isWeekdays 추가)
     function buyTicket(
@@ -248,10 +255,18 @@ contract HatjaeContract is TokenPrice{
         string memory _third,
         string memory _fourth
         ) public  payable{
-      require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
-      require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
-      ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+        require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
+        require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
+        // 티켓 구매가 처음이라면 참가자 주소 배열에 기록
+        if (ticketBox[round][msg.sender].length == 0){
+            buyers[round].push(msg.sender);
+        }
+        // 티켓 지급(?)
+         ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+        // 현재 라운드 티켓 수 count
+        ticketCount[round]++;
     }
+
 
     // 레이싱 시작 시 스냅샷 (테스트 끝나면 isWeekend 추가)  
     function racingStart() public onlyOwner {
@@ -267,7 +282,15 @@ contract HatjaeContract is TokenPrice{
         snapshot.bnb= TokenPrice.getBnb();
     }
 
-    // 각 토큰 수익률 계산 후 랭킹 집계 (테스트 끝나면 isWeekend 추가)
+
+    // // 당첨자 추첨
+    // function racingEnd() public isWeekdays{
+    //     getCurrentRateOfIncrease();
+    // }
+
+//----------------view function----------------
+
+    // 토큰들의 현재 랭킹 집계 (테스트 끝나면 isWeekend 추가)
     function getCurrentRank() public view returns(Token[10] memory){
         // 반환용 토큰정보 구조체
         Tokens memory tokens;
@@ -321,9 +344,18 @@ contract HatjaeContract is TokenPrice{
         return tempRank;
     }
 
-    // // 당첨자 추첨
-    // function racingEnd() public isWeekdays{
-    //     getCurrentRateOfIncrease();
-    // }
+    // 현재 라운드의 자신의 티켓들 보기
+    function checkMyTickets() public view returns(string[4][] memory){
+        return ticketBox[round][msg.sender];
+    }
+    
+    // 현재 라운드의 참가자 수 보기
+    function getNumberOfBuyer() public view returns(uint){
+        return buyers[round].length;
+    }
 
+    // 현재 라운드의 티켓 수 보기
+    function getNumberOfTicket() public view returns(uint){
+        return ticketCount[round];
+    }
 }

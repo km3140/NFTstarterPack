@@ -173,6 +173,9 @@ contract HatjaeContract is TokenPrice{
     //                                        👇 코인 4개 선택 가능
     mapping (uint => mapping(address => string[4][])) ticketBox;
 
+    // 스냅샷 재촬영 방지
+    mapping (uint => bool) isTaked;
+
     // 참가자들의 주소 (당첨자 색출에 사용)
     // 라운드 => [ 유저주소, 유저주소, ... ]
     mapping (uint => address[]) buyers;
@@ -195,22 +198,10 @@ contract HatjaeContract is TokenPrice{
     }
     Snapshot snapshot;
 
-    // 상승률 저장
+    // 상승률 반환용 구조체 (getCurrentRank의 로컬변수로 사용)
     struct Token{
         string symbol;
         int rate; 
-    }
-    struct Tokens{
-        Token btc;
-        Token eth;
-        Token xrp;
-        Token wemix;
-        Token klay;
-        Token ksp;
-        Token bora;
-        Token orc;
-        Token mbx;
-        Token bnb;
     }
 
     // 라운드별 레이싱결과의 이력
@@ -255,21 +246,22 @@ contract HatjaeContract is TokenPrice{
         string memory _third,
         string memory _fourth
         ) public  payable{
-        require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
-        require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
-        // 티켓 구매가 처음이라면 참가자 주소 배열에 기록
-        if (ticketBox[round][msg.sender].length == 0){
-            buyers[round].push(msg.sender);
-        }
-        // 티켓 지급(?)
-         ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
-        // 현재 라운드 티켓 수 count
-        ticketCount[round]++;
+      require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
+      require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
+      // 티켓 구매가 처음이라면 참가자 주소 배열에 기록
+      if (ticketBox[round][msg.sender].length == 0){
+          buyers[round].push(msg.sender);
+      }
+      // 티켓 지급(?)
+      ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+      // 현재 라운드 티켓 수 count
+      ticketCount[round]++;
     }
 
 
     // 레이싱 시작 시 스냅샷 (테스트 끝나면 isWeekend 추가)  
-    function racingStart() public onlyOwner {
+    function takeSnapshot() public onlyOwner {
+        require(isTaked[round] == false, "Snapshots can only be taken once per round"); // 중복 촬영 방지
         snapshot.btc= TokenPrice.getBtc();
         snapshot.eth= TokenPrice.getEth();
         snapshot.xrp= TokenPrice.getXrp();
@@ -280,11 +272,12 @@ contract HatjaeContract is TokenPrice{
         snapshot.orc= TokenPrice.getOrc();
         snapshot.mbx= TokenPrice.getMbx();
         snapshot.bnb= TokenPrice.getBnb();
+        isTaked[round]=true; // 중복 촬영 방지
     }
 
 
     // // 당첨자 추첨
-    // function racingEnd() public isWeekdays{
+    // function lottery() public isWeekdays{
     //     getCurrentRateOfIncrease();
     // }
 
@@ -292,45 +285,23 @@ contract HatjaeContract is TokenPrice{
 
     // 토큰들의 현재 랭킹 집계 (테스트 끝나면 isWeekend 추가)
     function getCurrentRank() public view returns(Token[10] memory){
-        // 반환용 토큰정보 구조체
-        Tokens memory tokens;
-        tokens.btc.symbol = "btc";
-        tokens.eth.symbol = "eth";
-        tokens.xrp.symbol = "xrp";
-        tokens.wemix.symbol = "wemix";
-        tokens.klay.symbol = "klay";
-        tokens.ksp.symbol = "ksp";
-        tokens.bora.symbol = "bora";
-        tokens.orc.symbol = "orc";
-        tokens.mbx.symbol = "mbx";
-        tokens.bnb.symbol = "bnb";
+        // 토큰 심볼과 상승률로 구성된 코인별 구조체
+        // 각 토큰 수익률 계산 : [ (현재가격 - 매수가격) * 10^(나타낼 소수점 자리 수) / 매수가격 * 100 ] 
+        Token memory btc = Token("btc",(int(TokenPrice.getBtc()) - int(snapshot.btc))*int(10**decimals) / int(snapshot.btc) * 100);
+        Token memory eth = Token("eth",(int(TokenPrice.getEth()) - int(snapshot.eth))*int(10**decimals) / int(snapshot.eth) * 100);
+        Token memory xrp = Token("xrp",(int(TokenPrice.getXrp()) - int(snapshot.xrp))*int(10**decimals) / int(snapshot.xrp) * 100);
+        Token memory wemix = Token("wemix",(int(TokenPrice.getKlay()) - int(snapshot.klay))*int(10**decimals) / int(snapshot.klay) * 100);
+        Token memory klay = Token("klay",(int(TokenPrice.getWemix()) - int(snapshot.wemix))*int(10**decimals) / int(snapshot.wemix) * 100);
+        Token memory ksp = Token("ksp",(int(TokenPrice.getKsp()) - int(snapshot.ksp))*int(10**decimals) / int(snapshot.ksp) * 100);
+        Token memory bora = Token("bora",(int(TokenPrice.getBora()) - int(snapshot.bora))*int(10**decimals) / int(snapshot.bora) * 100);
+        Token memory orc = Token("orc",(int(TokenPrice.getOrc()) - int(snapshot.orc))*int(10**decimals) / int(snapshot.orc) * 100);
+        Token memory mbx = Token("mbx",(int(TokenPrice.getMbx()) - int(snapshot.mbx))*int(10**decimals) / int(snapshot.mbx) * 100);
+        Token memory bnb = Token("bnb",(int(TokenPrice.getBnb()) - int(snapshot.bnb))*int(10**decimals) / int(snapshot.bnb) * 100);
 
-        // 각 토큰 수익률 계산 [ (현재가격 - 매수가격) * 10^(나타낼 소수점 자리 수) / 매수가격 * 100 ] 
-        tokens.btc.rate = (int(TokenPrice.getBtc()) - int(snapshot.btc))*int(10**decimals) / int(snapshot.btc) * 100;
-        tokens.eth.rate = (int(TokenPrice.getEth()) - int(snapshot.eth))*int(10**decimals) / int(snapshot.eth) * 100;
-        tokens.xrp.rate = (int(TokenPrice.getXrp()) - int(snapshot.xrp))*int(10**decimals) / int(snapshot.xrp) * 100;
-        tokens.klay.rate = (int(TokenPrice.getKlay()) - int(snapshot.klay))*int(10**decimals) / int(snapshot.klay) * 100;
-        tokens.wemix.rate = (int(TokenPrice.getWemix()) - int(snapshot.wemix))*int(10**decimals) / int(snapshot.wemix) * 100;
-        tokens.ksp.rate = (int(TokenPrice.getKsp()) - int(snapshot.ksp))*int(10**decimals) / int(snapshot.ksp) * 100;
-        tokens.bora.rate = (int(TokenPrice.getBora()) - int(snapshot.bora))*int(10**decimals) / int(snapshot.bora) * 100;
-        tokens.orc.rate = (int(TokenPrice.getOrc()) - int(snapshot.orc))*int(10**decimals) / int(snapshot.orc) * 100;
-        tokens.mbx.rate = (int(TokenPrice.getMbx()) - int(snapshot.mbx))*int(10**decimals) / int(snapshot.mbx) * 100;
-        tokens.bnb.rate = (int(TokenPrice.getBnb()) - int(snapshot.bnb))*int(10**decimals) / int(snapshot.bnb) * 100;
+        // 배열에 넣은 후
+        Token[10] memory tempRank = [btc,eth,xrp,klay,wemix,ksp,bora,orc,mbx,bnb];
 
-        // 임의로 배열에 넣은 후 내림차순 소팅 (랭킹 집계)
-        Token[10] memory tempRank;
-        tempRank[0]=tokens.btc;
-        tempRank[1]=tokens.eth;
-        tempRank[2]=tokens.xrp;
-        tempRank[3]=tokens.klay;
-        tempRank[4]=tokens.wemix;
-        tempRank[5]=tokens.ksp;
-        tempRank[6]=tokens.bora;
-        tempRank[7]=tokens.orc;
-        tempRank[8]=tokens.mbx;
-        tempRank[9]=tokens.bnb;
-
-        // tempRank 내림차순 삽입정렬
+        // 내림차순 삽입정렬
         for(uint i = 1; i < tempRank.length; i++){
         Token memory temp = tempRank[i];
         int aux = int(i)-1;

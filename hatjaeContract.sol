@@ -207,10 +207,9 @@ contract HatjaeContract is TokenPrice{
     // 라운드별 레이싱결과의 이력
     mapping( uint => RacingResult ) racingHistory;
     struct RacingResult{
-        address userAddress;
+        address[] winners;
+        string[] orderOfWinners;
         uint prize;
-        string[] tokenRank;
-        uint winner;
     }
     RacingResult[] racingResult;
 
@@ -276,9 +275,12 @@ contract HatjaeContract is TokenPrice{
     }
 
 
-    // // 당첨자 추첨
-    // function lottery() public isWeekdays{
-    //     getCurrentRateOfIncrease();
+    // // 당첨자 추첨 (테스트 끝나면 isWeekdays, isOwner 추가) 
+    // function lottery() public {
+    //     Token[10] memory rank = getCurrentRank();
+    //     top
+
+    //  // winners.length == 0 이라면 prize = 0;, 없다면 prize = address(this).balance;
     // }
 
 //----------------view function----------------

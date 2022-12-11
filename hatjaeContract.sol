@@ -162,11 +162,14 @@ contract HatjaeContract is TokenPrice{
     // 티켓 가격
     uint ticketPrice = 1e17; // e18 = *10**17 ❗❗      // 1e17 == 0.1klay
 
+    // 당첨자 나올 시 수수료 ( n%라면 n입력 )
+    uint8 feeForDev = 5;  
+
     // 라운드 (1주일마다++)
     uint round = 0; // 0라운드부터 시작(?) (배열 인덱스랑 맞추려고)
 
     // 라운드 시작 시간 (월요일 00시)
-    uint roundStartTime = 1670166000; // 12월 5일 월요일 00시
+    uint currentRoundStartedTime = 1670166000 + 1 weeks * round; // 12월 5일 월요일 00시 부터 시작
 
     // 라운드 진행 중 유저의 티켓 정보
     // 라운드 => 유저주소 => [ [코인순서], [코인순서], ... ]
@@ -209,7 +212,7 @@ contract HatjaeContract is TokenPrice{
     struct RacingResult{
         address[] winners;
         string[] orderOfWinners;
-        uint prize;
+        uint prizePerWinner;
     }
     RacingResult[] racingResult;
 
@@ -222,7 +225,7 @@ contract HatjaeContract is TokenPrice{
 
     modifier isWeekdays{
         require(
-        roundStartTime <= block.timestamp && block.timestamp < roundStartTime + 5 days,
+        currentRoundStartedTime <= block.timestamp && block.timestamp < currentRoundStartedTime + 5 days,
         "It's not the weekdays now"
         );
         _;
@@ -230,7 +233,7 @@ contract HatjaeContract is TokenPrice{
 
     modifier isWeekend{
         require(
-        roundStartTime + 5 days <= block.timestamp && block.timestamp < roundStartTime + 1 weeks,
+        currentRoundStartedTime + 5 days <= block.timestamp && block.timestamp < currentRoundStartedTime + 1 weeks,
         "It's not the weekend now"
         );
         _;
@@ -275,13 +278,48 @@ contract HatjaeContract is TokenPrice{
     }
 
 
-    // // 당첨자 추첨 (테스트 끝나면 isWeekdays, isOwner 추가) 
-    // function lottery() public {
-    //     Token[10] memory rank = getCurrentRank();
-    //     top
+    // 당첨자 추첨 (테스트 끝나면 isWeekdays, isOwner 추가) 
+    function lottery() public {
+        // 당첨번호 추출
+        Token[10] memory rank = getCurrentRank();
+        racingHistory[round].orderOfWinners = [rank[0].symbol, rank[1].symbol, rank[2].symbol, rank[3].symbol];
 
-    //  // winners.length == 0 이라면 prize = 0;, 없다면 prize = address(this).balance;
-    // }
+        // 당첨자 색출
+        for(uint i=0 ; i < buyers[round].length ; i++){
+            for(uint j=0 ; j < ticketBox[round][buyers[round][i]].length ; j++){
+                if(
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][0]))) ==
+                    keccak256(abi.encodePacked((rank[0].symbol)))
+                    &&
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][1]))) ==
+                    keccak256(abi.encodePacked((rank[1].symbol)))
+                    &&
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][2]))) ==
+                    keccak256(abi.encodePacked((rank[2].symbol)))
+                    &&
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][3]))) ==
+                    keccak256(abi.encodePacked((rank[3].symbol)))
+                ){
+                    racingHistory[round].winners.push(buyers[round][i]);
+                }    
+            }
+        }
+        if (racingHistory[round].winners.length == 0){
+            racingHistory[round].prizePerWinner == 0;
+        }else{
+            racingHistory[round].prizePerWinner == address(this).balance * (100-feeForDev)/100 / racingHistory[round].winners.length;
+            
+            // 당첨자에게 송금
+            for(uint i=0 ; i < racingHistory[round].winners.length ; i++){
+                // racingHistory[round].winners[i].call
+            }
+
+            // owner에게 수수료 송금
+        }
+
+        // 다음 라운드로
+        round++;
+    }
 
 //----------------view function----------------
 

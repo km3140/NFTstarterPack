@@ -216,6 +216,9 @@ contract HatjaeContract is TokenPrice{
     }
     RacingResult[] racingResult;
 
+    // 당첨금 전송 성공여부 이벤트
+    event transferSuccessful(bool _success, string _to);
+
 //---------------modifier---------------
 
     modifier onlyOwner{
@@ -248,16 +251,17 @@ contract HatjaeContract is TokenPrice{
         string memory _third,
         string memory _fourth
         ) public  payable{
-      require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
-      require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
-      // 티켓 구매가 처음이라면 참가자 주소 배열에 기록
-      if (ticketBox[round][msg.sender].length == 0){
-          buyers[round].push(msg.sender);
-      }
-      // 티켓 지급(?)
-      ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
-      // 현재 라운드 티켓 수 count
-      ticketCount[round]++;
+        require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
+        require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
+
+        // 티켓 구매가 처음이라면 참가자 주소 배열에 기록
+        if (ticketBox[round][msg.sender].length == 0){
+            buyers[round].push(msg.sender);
+        }
+        // 티켓 지급(?)
+        ticketBox[round][msg.sender].push([_first,_second,_third,_fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+        // 현재 라운드 티켓 수 count
+        ticketCount[round]++;
     }
 
 
@@ -279,7 +283,7 @@ contract HatjaeContract is TokenPrice{
 
 
     // 당첨자 추첨 (테스트 끝나면 isWeekdays, isOwner 추가) 
-    function lottery() public {
+    function lottery() public payable {
         // 당첨번호 추출
         Token[10] memory rank = getCurrentRank();
         racingHistory[round].orderOfWinners = [rank[0].symbol, rank[1].symbol, rank[2].symbol, rank[3].symbol];
@@ -304,17 +308,20 @@ contract HatjaeContract is TokenPrice{
                 }    
             }
         }
+
+        // 이번 라운드 상금 기록 후 당첨금 인출
         if (racingHistory[round].winners.length == 0){
             racingHistory[round].prizePerWinner == 0;
         }else{
             racingHistory[round].prizePerWinner == address(this).balance * (100-feeForDev)/100 / racingHistory[round].winners.length;
-            
             // 당첨자에게 송금
             for(uint i=0 ; i < racingHistory[round].winners.length ; i++){
-                // racingHistory[round].winners[i].call
+                (bool successW,) = racingHistory[round].winners[i].call{value:racingHistory[round].prizePerWinner}("");
+                emit transferSuccessful(successW, "to winner");
             }
-
-            // owner에게 수수료 송금
+            // owner에게 잔금(수수료) 송금
+            (bool successO,) = owner.call{value: msg.value}("");
+            emit transferSuccessful(successO, "to owner");
         }
 
         // 다음 라운드로
@@ -351,7 +358,6 @@ contract HatjaeContract is TokenPrice{
         }
         tempRank[uint(aux+1)]=temp;
         }
-
         return tempRank;
     }
 

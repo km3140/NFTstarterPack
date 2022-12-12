@@ -22,8 +22,8 @@ contract OriginTokenContract is IKIP7 {
 
 contract TokenPrice{
 
-    // 가격이 작은 토큰이 원하는 decimals만큼 자릿수가 더 많아야한다
-    // ex ) eth-usdt에서 리턴값이 7decimals를 원할 때 : usdt가 decimals가 7만큼 더 많아야한다
+    // 가격을 구할 토큰이 원하는 decimals만큼 자릿수가 더 적어야한다 (토큰/가격을구할토큰)
+    // ex ) eth-usdt에서 리턴값이 6decimals를 원할 때 : usdt가 decimals가 6만큼 더 많아야한다
 
     // 토큰 가격의 소수점을 몇 자리까지 표현할 건지
     uint8 decimals = 6; // 기본값 6
@@ -54,7 +54,8 @@ contract TokenPrice{
     address MBX_oUSDT = 0xE847e533C75b1832240c8142672CA295ac6de0cf;
     address oBNB_KLAY = 0xE20B9aeAcAC615Da0fdBEB05d4F75E16FA1F6B95; //1
     address oBNB_oBUSD = 0x5DA044864a2cbe03546810f6bb2f274a45edB8C6;//2
-    
+    address oBNB_oETH = 0x8119f0CeC72a26fE23CA1aB076137Ea5D8a19d54; //3
+
     constructor() {
         oUSDT = OriginTokenContract(0xceE8FAF64bB97a73bb51E115Aa89C17FfA8dD167);
         oETH = OriginTokenContract(0x34d21b1e550D73cee41151c77F3c73359527a396);
@@ -69,81 +70,123 @@ contract TokenPrice{
         oBUSD = OriginTokenContract(0x210bC03f49052169D5588A52C317f71cF2078b85);
     }
 
-//-----------아래 함수들의 return값인 토큰 가격의 소수점 자리수 = decimals----------------
+//---------------------------가격 구하기----------------------------
 
-    // 비트코인 가격 구하기
-    function getBtc() internal view returns(uint){
+    // 비트코인
+    function getBtc() public view returns(uint){
         uint btc = oWBTC.balanceOf(oWBTC_oETH);                // oWBTC의 decimals = 8  
         uint eth = oETH.balanceOf(oWBTC_oETH)/10**(10-decimals); 
-        uint ethPerBtc = eth/btc;
-        uint dollarPerBtc = ethPerBtc * getEth() / 10**decimals;
-        return dollarPerBtc;
+        uint btcFromEth = eth/btc * getEth() / 10**decimals;
+
+        uint btcPrice = btcFromEth;
+        return btcPrice;
     }
 
-    // 이더리움 가격 구하기
-    function getEth() internal view returns(uint){
+    // 이더리움
+    function getEth() public view returns(uint){
         uint eth = oETH.balanceOf(oETH_oUSDT)/10**(12+decimals);   
         uint usdt = oUSDT.balanceOf(oETH_oUSDT);                   // oUSDT의 decimals = 6
-        return usdt/eth;
+        uint ethFromUsdt = usdt/eth;
+
+        uint ethPrice = ethFromUsdt;
+        return ethPrice;
     }
 
-    // 클레이 가격 구하기
-    function getKlay() internal view returns(uint){
+    // 클레이
+    function getKlay() public view returns(uint){
         uint klay = KLAY_oUSDT.balance/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(KLAY_oUSDT);
-        return usdt/klay;
+        uint klayFromUsdt = usdt/klay;
+
+        uint klayPrice = klayFromUsdt;
+        return klayPrice;
     }
 
-    // 리플 가격 구하기
-    function getXrp() internal view returns(uint){
+    // 리플
+    function getXrp() public view returns(uint){
         uint xrp = oXRP.balanceOf(oXRP_oUSDT)/10**(decimals); // oXRP의 decimals = 6
         uint usdt = oUSDT.balanceOf(oXRP_oUSDT);
-        return usdt/xrp;
+        uint xrpFromUsdt = usdt/xrp;
+     
+        uint xrpPrice = xrpFromUsdt;
+        return xrpPrice;
     }
 
-    // 위믹스 가격 구하기
-    function getWemix() internal view returns(uint){
+    // 위믹스 (1,950,000$)
+    function getWemix() public view returns(uint){
+        // WEMIX_oUSDT
         uint wemix = WEMIX.balanceOf(WEMIX_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(WEMIX_oUSDT);
-        return usdt/wemix;
+        uint wemixFromUsdt = usdt/wemix;
+
+        // WEMIX_KLAY
+        uint wemix2 = WEMIX.balanceOf(WEMIX_oUSDT)/10**(decimals);
+        uint klay = WEMIX_KLAY.balance;
+        uint wemixFromKlay = klay/wemix2 * getKlay() /10**(decimals);
+
+        uint wemixPrice = (wemixFromUsdt + wemixFromKlay)/2;
+        return wemixPrice;
     }
 
-    // 클레이스왑 가격 구하기
-    function getKsp() internal view returns(uint){
+    // 클레이스왑
+    function getKsp() public view returns(uint){
         uint ksp = KSP.balanceOf(KSP_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(KSP_oUSDT);
-        return usdt/ksp;
+        uint kspFromUsdt = usdt/ksp;
+        
+        uint kspPrice = kspFromUsdt;
+        return kspPrice;
     }
 
-    // 보라 가격 구하기
-    function getBora() internal view returns(uint){
+    // 보라
+    function getBora() public view returns(uint){
         uint bora = BORA.balanceOf(BORA_KLAY)/10**(decimals);
         uint klay = BORA_KLAY.balance;
-        uint klayPerBora = klay/bora * getKlay() /10**(decimals);
-        return klayPerBora;
+        uint boraFromKlay = klay/bora * getKlay() /10**(decimals);
+
+        uint boraPrice = boraFromKlay;
+        return boraPrice;
     }
 
-    // 오르빗 가격 구하기
-    function getOrc() internal view returns(uint){
+    // 오르빗
+    function getOrc() public view returns(uint){
         uint orc = oORC.balanceOf(oORC_KLAY)/10**(decimals);
         uint klay = oORC_KLAY.balance;
-        uint klayPerOrc = klay/orc * getKlay() /10**(decimals);
-        return klayPerOrc;
+        uint orcFromKlay = klay/orc * getKlay() /10**(decimals);
+
+        uint orcPrice = orcFromKlay;
+        return orcPrice;
     }
 
-    // 마브렉스 가격 구하기
-    function getMbx() internal view returns(uint){
+    // 마브렉스
+    function getMbx() public view returns(uint){
         uint mbx = MBX.balanceOf(MBX_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(MBX_oUSDT);
-        return usdt/mbx;
+        uint mbxFromUsdt = usdt/mbx;
+
+        uint mbxPrice = mbxFromUsdt;
+        return mbxPrice;
     }
 
-    // bnb 가격 구하기 (busd추가해야함)
-    function getBnb() internal view returns(uint){
+    // bnb (500,000$)
+    function getBnb() public view returns(uint){
+        // oBNB_KLAY
         uint bnb = oBNB.balanceOf(oBNB_KLAY)/10**(decimals);
         uint klay = oBNB_KLAY.balance;
-        uint klayPerBnb = klay/bnb * getKlay() /10**(decimals);
-        return klayPerBnb;
+        uint bnbFromKlay = klay/bnb * getKlay() /10**(decimals);
+
+        // oBNB_oBUS
+        uint bnb2 = oBNB.balanceOf(oBNB_oBUSD)/10**(decimals);
+        uint busd = oBUSD.balanceOf(oBNB_oBUSD);
+        uint bnbFromBusd = busd/bnb2;
+        
+        // oBNB_oETH
+        uint bnb3 = oBNB.balanceOf(oBNB_oETH)/10**(decimals);
+        uint eth = oETH.balanceOf(oBNB_oETH);
+        uint bnbFromEth = eth/bnb3 * getEth() / 10**(decimals);
+
+        uint bnbPrice = (5*bnbFromKlay + 4*bnbFromBusd + 1*bnbFromEth) / 10;
+        return bnbPrice;
     }
 
 }

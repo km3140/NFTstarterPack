@@ -72,7 +72,7 @@ contract TokenPrice{
 
 //---------------------------가격 구하기----------------------------
 
-    // 비트코인
+    // 비트코인 (2,800,000$)
     function getBtc() public view returns(uint){
         uint btc = oWBTC.balanceOf(oWBTC_oETH);                // oWBTC의 decimals = 8  
         uint eth = oETH.balanceOf(oWBTC_oETH)/10**(10-decimals); 
@@ -82,7 +82,7 @@ contract TokenPrice{
         return btcPrice;
     }
 
-    // 이더리움
+    // 이더리움 (4,100,000$)
     function getEth() public view returns(uint){
         uint eth = oETH.balanceOf(oETH_oUSDT)/10**(12+decimals);   
         uint usdt = oUSDT.balanceOf(oETH_oUSDT);                   // oUSDT의 decimals = 6
@@ -92,7 +92,7 @@ contract TokenPrice{
         return ethPrice;
     }
 
-    // 클레이
+    // 클레이 (9,700,000$)
     function getKlay() public view returns(uint){
         uint klay = KLAY_oUSDT.balance/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(KLAY_oUSDT);
@@ -102,12 +102,12 @@ contract TokenPrice{
         return klayPrice;
     }
 
-    // 리플
+    // 리플 (2,200,000$)
     function getXrp() public view returns(uint){
         uint xrp = oXRP.balanceOf(oXRP_oUSDT)/10**(decimals); // oXRP의 decimals = 6
         uint usdt = oUSDT.balanceOf(oXRP_oUSDT);
         uint xrpFromUsdt = usdt/xrp;
-     
+    
         uint xrpPrice = xrpFromUsdt;
         return xrpPrice;
     }
@@ -128,7 +128,7 @@ contract TokenPrice{
         return wemixPrice;
     }
 
-    // 클레이스왑
+    // 클레이스왑 (1,800,000$)
     function getKsp() public view returns(uint){
         uint ksp = KSP.balanceOf(KSP_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(KSP_oUSDT);
@@ -138,7 +138,7 @@ contract TokenPrice{
         return kspPrice;
     }
 
-    // 보라
+    // 보라 (1,500,000$)
     function getBora() public view returns(uint){
         uint bora = BORA.balanceOf(BORA_KLAY)/10**(decimals);
         uint klay = BORA_KLAY.balance;
@@ -148,7 +148,7 @@ contract TokenPrice{
         return boraPrice;
     }
 
-    // 오르빗
+    // 오르빗 (1,600,000$)
     function getOrc() public view returns(uint){
         uint orc = oORC.balanceOf(oORC_KLAY)/10**(decimals);
         uint klay = oORC_KLAY.balance;
@@ -158,7 +158,7 @@ contract TokenPrice{
         return orcPrice;
     }
 
-    // 마브렉스
+    // 마브렉스 (1,500,000$)
     function getMbx() public view returns(uint){
         uint mbx = MBX.balanceOf(MBX_oUSDT)/10**(12+decimals);
         uint usdt = oUSDT.balanceOf(MBX_oUSDT);

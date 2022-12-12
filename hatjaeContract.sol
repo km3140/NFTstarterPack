@@ -161,10 +161,10 @@ contract HatjaeContract is TokenPrice{
     }
 
     // 티켓 가격
-    uint ticketPrice = 1e17; // e18 = *10**17 ❗❗      // 1e17 == 0.1klay
+    uint TICKET_PRICE = 1e17; // e18 = *10**17 ❗❗      // 1e17 == 0.1klay
 
     // 당첨자 나올 시 수수료 ( n%라면 n입력 )
-    uint feeForDev = 5;  
+    uint FEE_FOR_DEV = 5;  
 
     // 라운드 (1주일마다++)
     uint round = 0; // 0라운드부터 시작(?) (배열 인덱스랑 맞추려고)
@@ -252,8 +252,8 @@ contract HatjaeContract is TokenPrice{
         string memory _third,
         string memory _fourth
         ) public isWeekdays payable{
-        require(msg.value == ticketPrice, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
-        require(msg.sender.balance >= ticketPrice, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
+        require(msg.value == TICKET_PRICE, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
+        require(msg.sender.balance >= TICKET_PRICE, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
 
         // 티켓 구매가 처음이라면 참가자 주소 배열에 기록
         if (ticketBox[round][msg.sender].length == 0){
@@ -315,7 +315,7 @@ contract HatjaeContract is TokenPrice{
         if (racingHistory[round].winners.length == 0){
             racingHistory[round].prizePerWinner == 0;
         }else{
-            racingHistory[round].prizePerWinner = address(this).balance * (100-feeForDev)/100 / racingHistory[round].winners.length;
+            racingHistory[round].prizePerWinner = address(this).balance * (100-FEE_FOR_DEV)/100 / racingHistory[round].winners.length;
             // 당첨자에게 송금
             for(uint i=0 ; i < racingHistory[round].winners.length ; i++){
                 (bool successW,) = payable(racingHistory[round].winners[i]).call{value:racingHistory[round].prizePerWinner}("");

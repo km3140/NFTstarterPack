@@ -260,6 +260,13 @@ contract HatjaeContract is TokenPrice{
     }
     RacingResult[] racingResult;
 
+
+    // 티켓 구매 완료 이벤트
+    event ticketSold(address _who, string[4] _order);
+
+    // 스냅샷 촬영 완료 이벤트
+    event take(uint _round, Snapshot _snapshot);
+
     // 당첨금 전송 성공여부 이벤트
     event transferSuccessful(bool _success, string _to);
 
@@ -302,10 +309,15 @@ contract HatjaeContract is TokenPrice{
         if (ticketBox[round][msg.sender].length == 0){
             buyers[round].push(msg.sender);
         }
+
         // 티켓 지급(?)
         ticketBox[round][msg.sender].push([_first, _second, _third, _fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+
         // 현재 라운드 티켓 수 count
         ticketCount[round]++;
+
+        // 구매자 주소와 구매자가 선택한 순위 emit
+        emit ticketSold(msg.sender, [_first, _second, _third, _fourth]);
     }
 
 
@@ -322,7 +334,12 @@ contract HatjaeContract is TokenPrice{
         snapshot.orc= TokenPrice.getOrc();
         snapshot.mbx= TokenPrice.getMbx();
         snapshot.bnb= TokenPrice.getBnb();
-        isTaked[round]=true; // 중복 촬영 방지
+
+         // 중복 촬영 방지
+        isTaked[round]=true;
+
+        // 촬영완료 이벤트
+        emit take(round,snapshot);
     }
 
 
@@ -339,15 +356,15 @@ contract HatjaeContract is TokenPrice{
                 if(
                     keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][0]))) ==
                     keccak256(abi.encodePacked((rank[0].symbol)))
-                    // &&
-                    // keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][1]))) ==
-                    // keccak256(abi.encodePacked((rank[1].symbol)))
-                    // &&
-                    // keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][2]))) ==
-                    // keccak256(abi.encodePacked((rank[2].symbol)))
-                    // &&
-                    // keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][3]))) ==
-                    // keccak256(abi.encodePacked((rank[3].symbol)))
+                    &&
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][1]))) ==
+                    keccak256(abi.encodePacked((rank[1].symbol)))
+                    &&
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][2]))) ==
+                    keccak256(abi.encodePacked((rank[2].symbol)))
+                    &&
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][3]))) ==
+                    keccak256(abi.encodePacked((rank[3].symbol)))
                 ){
                     racingHistory[round].winners.push(buyers[round][i]);
                 }    
@@ -361,12 +378,12 @@ contract HatjaeContract is TokenPrice{
             racingHistory[round].prizePerWinner = address(this).balance * (100-FEE_FOR_DEV)/100 / racingHistory[round].winners.length;
             // 당첨자에게 송금
             for(uint i=0 ; i < racingHistory[round].winners.length ; i++){
-                (bool successW,) = payable(racingHistory[round].winners[i]).call{value:racingHistory[round].prizePerWinner}("");
-                emit transferSuccessful(successW, "to winner");
+                (bool success1,) = payable(racingHistory[round].winners[i]).call{value:racingHistory[round].prizePerWinner}("");
+                emit transferSuccessful(success1, "to winner");
             }
             // owner에게 잔금(수수료) 송금
-            (bool successO,) = payable(owner).call{value: address(this).balance}("");
-            emit transferSuccessful(successO, "to owner");
+            (bool success2,) = payable(owner).call{value: address(this).balance}("");
+            emit transferSuccessful(success2, "to owner");
         }
 
         // 다음 라운드로

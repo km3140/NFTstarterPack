@@ -67,4 +67,6 @@ contract TokenPrice2{
 
     }
 
+// 다른 방법2 (view 함수로 사용할 수 없음)
+
 }

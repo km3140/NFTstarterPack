@@ -49,3 +49,22 @@ contract MyContract{
         return usdt/eth;
     }
 }
+
+
+
+// + 다른 방법
+contract TokenPrice2{
+
+    address oUSDT = 0xceE8FAF64bB97a73bb51E115Aa89C17FfA8dD167;
+    address oETH = 0x34d21b1e550D73cee41151c77F3c73359527a396;
+
+    address oETH_oUSDT = 0x029e2A1B2bb91B66bd25027E1C211E5628dbcb93;
+
+    function dollarPerEth() public view returns(uint){
+        uint eth = OriginTokenContract(oETH).balanceOf(oETH_oUSDT)/10**12;   
+        uint usdt = OriginTokenContract(oUSDT).balanceOf(oETH_oUSDT);          
+        return usdt/eth;
+
+    }
+
+}

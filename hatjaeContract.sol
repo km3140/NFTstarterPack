@@ -28,17 +28,17 @@ contract TokenPrice{
     // 토큰 가격의 소수점을 몇 자리까지 표현할 건지
     uint8 decimals = 6; // 기본값 6
 
-    OriginTokenContract oUSDT;
-    OriginTokenContract oETH;
-    OriginTokenContract oWBTC;
-    OriginTokenContract oXRP;
-    OriginTokenContract WEMIX;
-    OriginTokenContract KSP;
-    OriginTokenContract BORA;
-    OriginTokenContract oORC;
-    OriginTokenContract MBX;
-    OriginTokenContract oBNB;
-    OriginTokenContract oBUSD;
+    OriginTokenContract oUSDT = OriginTokenContract(0xceE8FAF64bB97a73bb51E115Aa89C17FfA8dD167);
+    OriginTokenContract oETH = OriginTokenContract(0x34d21b1e550D73cee41151c77F3c73359527a396);
+    OriginTokenContract oWBTC = OriginTokenContract(0x16D0e1fBD024c600Ca0380A4C5D57Ee7a2eCBf9c);
+    OriginTokenContract oXRP = OriginTokenContract(0x9eaeFb09fe4aABFbE6b1ca316a3c36aFC83A393F);
+    OriginTokenContract WEMIX = OriginTokenContract(0x5096dB80B21Ef45230C9E423C373f1FC9C0198dd);
+    OriginTokenContract KSP = OriginTokenContract(0xC6a2Ad8cC6e4A7E08FC37cC5954be07d499E7654);
+    OriginTokenContract BORA = OriginTokenContract(0x02cbE46fB8A1F579254a9B485788f2D86Cad51aa);
+    OriginTokenContract oORC = OriginTokenContract(0xFe41102f325dEaa9F303fDd9484Eb5911a7BA557);
+    OriginTokenContract MBX = OriginTokenContract(0xD068c52d81f4409B9502dA926aCE3301cc41f623);
+    OriginTokenContract oBNB = OriginTokenContract(0x574e9c26bDA8b95D7329505b4657103710EB32eA);
+    OriginTokenContract oBUSD = OriginTokenContract(0x210bC03f49052169D5588A52C317f71cF2078b85);
 
     // 풀 주소
     address oETH_oUSDT = 0x029e2A1B2bb91B66bd25027E1C211E5628dbcb93;
@@ -55,20 +55,6 @@ contract TokenPrice{
     address oBNB_KLAY = 0xE20B9aeAcAC615Da0fdBEB05d4F75E16FA1F6B95; //1
     address oBNB_oBUSD = 0x5DA044864a2cbe03546810f6bb2f274a45edB8C6;//2
     address oBNB_oETH = 0x8119f0CeC72a26fE23CA1aB076137Ea5D8a19d54; //3
-
-    constructor() {
-        oUSDT = OriginTokenContract(0xceE8FAF64bB97a73bb51E115Aa89C17FfA8dD167);
-        oETH = OriginTokenContract(0x34d21b1e550D73cee41151c77F3c73359527a396);
-        oWBTC = OriginTokenContract(0x16D0e1fBD024c600Ca0380A4C5D57Ee7a2eCBf9c);
-        oXRP = OriginTokenContract(0x9eaeFb09fe4aABFbE6b1ca316a3c36aFC83A393F);
-        WEMIX = OriginTokenContract(0x5096dB80B21Ef45230C9E423C373f1FC9C0198dd);
-        KSP = OriginTokenContract(0xC6a2Ad8cC6e4A7E08FC37cC5954be07d499E7654);
-        BORA = OriginTokenContract(0x02cbE46fB8A1F579254a9B485788f2D86Cad51aa);
-        oORC = OriginTokenContract(0xFe41102f325dEaa9F303fDd9484Eb5911a7BA557);
-        MBX = OriginTokenContract(0xD068c52d81f4409B9502dA926aCE3301cc41f623);
-        oBNB = OriginTokenContract(0x574e9c26bDA8b95D7329505b4657103710EB32eA);
-        oBUSD = OriginTokenContract(0x210bC03f49052169D5588A52C317f71cF2078b85);
-    }
 
 //---------------------------가격 구하기----------------------------
 

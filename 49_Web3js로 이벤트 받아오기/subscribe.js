@@ -1,4 +1,6 @@
 import Web3 from 'web3';
+import InsertToDB from './dbutil.js';
+
 const web3 = new Web3(
   new Web3.providers.WebsocketProvider(
     'wss://mainnet.infura.io/ws/v3/36ffd7ab3ab1420eb84c5ac8fc04d558'
@@ -21,6 +23,7 @@ function Subscribe(contract_address, topic, type) {
       } else {
         console.log('*************************************');
         console.log('New Transaction Event');
+        console.log(type);
         console.log('*************************************');
         getReceiptFindTransfer(result.transactionHash, type);
       }
@@ -31,24 +34,27 @@ function Subscribe(contract_address, topic, type) {
 // 리저브옥션 같은 경우엔 Subscribe만으로는 transfer의 이벤트를 가져오지 못하므로 같은 트렌젝션에 있는 transfer log를 가져오는 과정 추가
 async function getReceiptFindTransfer(txid, type) {
   // 해당 트렌젝션 영수증 가져오기
-  web3.eth.getTransactionReceipt(txid).then(result => {
+  web3.eth.getTransactionReceipt(txid).then((result) => {
     let logs = result.logs;
     for (const log of logs) {
       let topics = log.topics;
       // 0번째 토픽이 transfer라면~
       if (
-        topic[0] == '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+        topics[0] ==
+        '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
       ) {
-        let token_id = topic[3];
-        let new_owner = topic[2];
-        let before_owner = topic[1];
+        let token_id = topics[3];
+        let new_owner = topics[2];
+        let before_owner = topics[1];
         let contract_address = log.address;
-        token_id = web3.utils.hexToNumberString(token_id);
-        InsertToDB(contract_address, token_id, type, before_owner, new_owner);
+        token_id = web3.utils.hexToNumberString(token_id); // 16진수를 10진수 string 형식으로 변환
+        InsertToDB(contract_address, token_id, type, before_owner, new_owner); // 필터링한 값 DB에 Insert
       }
     }
   });
 }
+
+export default Subscribe;
 
 // 트렌젝션 영수증 예시(getTransactionReceipt의 result)
 /*

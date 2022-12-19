@@ -3,7 +3,7 @@
 pragma solidity ^0.8.1;
 
 // 오픈제플린에 UUPD라는 프록시 방식이 있다
-// proxy를 통해 직접 구현하는 것 보다 그냥 가져다 쓰는 게 state collision이나 관리자 문제가 없다
+// proxy를 통해 직접 구현하는 것 보다 그냥 가져다 쓰는 게 state(storage?) collision이나 관리자 문제가 없다
 // UUPS를 사용하여 배포하면 remix에서 자동으로 인식함, deploy 밑에 deploy with proxy, upgrade with proxy
   // deploy with proxy : 최초 배포할 때 (implement contract 배포, ERC1967 proxy contract 배포, 두가지 트렌잭션이 발생함)
   // upgrade with proxy : 프록시 업그레이드 할 때 (new implement contract 배포, new implement 주소로 proxy contract update, 두가지 트렌잭션이 발생함)

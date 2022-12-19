@@ -67,6 +67,28 @@ contract TokenPrice2{
 
     }
 
-// 다른 방법2 (view 함수로 사용할 수 없음)
+
+
+// 방법2 call 쓰기 (view 함수로 사용할 수 없음)
+contract TokenPrice3{
+address oUSDT = 0xceE8FAF64bB97a73bb51E115Aa89C17FfA8dD167;
+
+address poolAdr = 0x029e2A1B2bb91B66bd25027E1C211E5628dbcb93;
+
+// oUSDT의 balance만 가져옴
+function bytesToUint() public returns (uint256){
+    bytes memory callFuncBytes = abi.encodeWithSignature("balanceOf(address)",poolAdr);
+    (, bytes memory balance) = usdt.call(callFuncBytes);
+    uint256 number;
+    // 바이트 결과값을 정수로
+    for(uint i=0;i<balance.length;i++){
+    number = number + uint8(balance[i])*(2**(8*(balance.length-(i+1))));
+    }
+    return number;
+}
+}
+
+// 방법3 체인링크 사용하기
+
 
 }

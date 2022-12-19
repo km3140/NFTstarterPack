@@ -1,6 +1,8 @@
 // foundation이라는 nft마켓에서 transfer정보 실시간으로 받아오기
 
 import Web3 from 'web3';
+import Subscribe from './subscribe.js';
+
 // 실시간으로 정보를 추출해야하므로 웹소켓 사용
 const web3 = new Web3(
   new Web3.providers.WebsocketProvider(
@@ -20,7 +22,7 @@ const market_list_topic = web3.utils.sha3(
   'ReserveAuctionCreated(address,address,uint256,uint256,uint256,uint256,uint256)'
 );
 const market_sold_topic = web3.utils.sha3(
-  'ReserveAuctionFinalized (uint256,address,address,uint256,uint256,uint256)'
+  'ReserveAuctionFinalized(uint256,address,address,uint256,uint256,uint256)'
 );
 
 Subscribe(foundation_token_address, transfer_topic, 'TRANSFER'); // transfer 받아오기 (foundation에서 직접 발행한 nft인듯)

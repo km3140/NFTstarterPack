@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.1;
@@ -161,7 +160,7 @@ contract TokenPrice{
         uint klay = oBNB_KLAY.balance;
         uint bnbFromKlay = klay/bnb * getKlay() /10**(decimals);
 
-        // oBNB_oBUS
+        // oBNB_oBUSD
         uint bnb2 = oBNB.balanceOf(oBNB_oBUSD)/10**(decimals);
         uint busd = oBUSD.balanceOf(oBNB_oBUSD);
         uint bnbFromBusd = busd/bnb2;
@@ -190,7 +189,7 @@ contract HatjaeContract is TokenPrice{
     }
 
     // 티켓 가격
-    uint TICKET_PRICE = 1e17; // e18 = *10**17 ❗❗      // 1e17 == 0.1klay
+    uint TICKET_PRICE = 1e17; // e17 = *10**17, 1e17peb == 0.1Klay
 
     // 당첨자 나올 시 수수료 ( n%라면 n입력 )
     uint FEE_FOR_DEV = 5;  
@@ -201,51 +200,45 @@ contract HatjaeContract is TokenPrice{
     // 라운드 시작 시간 (월요일 00시)
     uint currentRoundStartedTime = 1670166000 + 1 weeks * round; // 12월 5일 월요일 00시 부터 시작
 
-    // 라운드 진행 중 유저의 티켓 정보
-    // 라운드 => 유저주소 => [ [코인순서], [코인순서], ... ]
-    //                                        👇 코인 4개 선택 가능
-    mapping (uint => mapping(address => string[4][])) ticketBox;
+    // 라운드별 유저의 티켓 정보
+    mapping (uint => mapping(address => Ticket[])) ticketBox;
+    struct Ticket{
+        address buyer;  
+        string[4] order; // 코인 4개 선택
+        string said; // 했제 한마디     (❗ string 길이 제한 추가해야 할 듯 ❗)
+    }
 
-    // 스냅샷 재촬영 방지
+    // 라운드별 스냅샷 (재촬영 방지)
     mapping (uint => bool) isTaked;
 
-    // 참가자들의 주소 (당첨자 색출에 사용)
-    // 라운드 => [ 유저주소, 유저주소, ... ]
+    // 라운드별 참가자들의 주소 (당첨자 색출에 사용)
     mapping (uint => address[]) buyers;
 
-    // 현재 라운드의 티켓 수
-    mapping( uint => uint ) ticketCount;
+    // 라운드별 티켓 수 세기
+    mapping(uint => uint) ticketCount;
 
-    // 토요일 00시에 찍을 스냅샷
-    struct Snapshot {
-        uint btc;   // 비트코인
-        uint eth;   // 이더리움
-        uint xrp;   // 리플
-        uint klay;  // 클레이튼
-        uint wemix; // 위믹스
-        uint ksp;   // 클레이스왑
-        uint bora;  // 보라
-        uint orc;   // 오르빗체인
-        uint mbx;   // 마브렉스
-        uint bnb;   // 바이낸스코인
-    }
-    Snapshot snapshot;
-
-    // 상승률 반환용 구조체 (getCurrentRank의 로컬변수로 사용)
-    struct Token{
-        string symbol;
-        int rate; 
+    // 라운드별 스냅샷 (토요일 00시에 찍음)
+    mapping(uint => Snapshot) snapshot;
+    struct Snapshot { 
+        uint btc;
+        uint eth;
+        uint xrp;
+        uint klay;
+        uint wemix;
+        uint ksp;
+        uint bora;
+        uint orc;
+        uint mbx;
+        uint bnb;
     }
 
     // 라운드별 레이싱결과의 이력
-    mapping( uint => RacingResult ) racingHistory;
-    struct RacingResult{
-        address[] winners;
-        string[] orderOfWinners;
-        uint prizePerWinner;
+    mapping( uint => Result ) result;
+    struct Result{
+        Ticket[] winningTickets; // 당첨 티켓들
+        uint prizeAmount; // 수수료 뺀 총 상금
+        uint prizePerWinner; // 인당 상금
     }
-    RacingResult[] racingResult;
-
 
     // 티켓 구매 완료 이벤트
     event ticketSold(address _who, string[4] _order);
@@ -256,6 +249,12 @@ contract HatjaeContract is TokenPrice{
     // 당첨금 전송 성공여부 이벤트
     event transferSuccessful(bool _success, string _to);
 
+    // 상승률 반환용 구조체 (getCurrentRank의 로컬변수로 사용)
+    struct Token{
+        string symbol;
+        int rate; 
+    }
+
 //---------------modifier---------------
 
     modifier onlyOwner{
@@ -263,6 +262,7 @@ contract HatjaeContract is TokenPrice{
         _;
     }
 
+    // 주중인지 확인
     modifier isWeekdays{
         require(
         currentRoundStartedTime <= block.timestamp && block.timestamp < currentRoundStartedTime + 5 days,
@@ -271,11 +271,22 @@ contract HatjaeContract is TokenPrice{
         _;
     }
 
+    // 주말인지 확인
     modifier isWeekend{
         require(
         currentRoundStartedTime + 5 days <= block.timestamp && block.timestamp < currentRoundStartedTime + 1 weeks,
         "It's not the weekend now"
         );
+        _;
+    }
+    
+    // view 함수들에 사용
+    modifier notStarted(uint _round){
+        require(_round <= round, "This round has not started");
+        _;
+    }
+    modifier notFinished(uint _round){
+        require(_round < round, "It's not a finished round");
         _;
     }
 
@@ -286,7 +297,8 @@ contract HatjaeContract is TokenPrice{
         string memory _first,
         string memory _second,
         string memory _third,
-        string memory _fourth
+        string memory _fourth,
+        string memory _said
         ) public isWeekdays payable{
         require(msg.value == TICKET_PRICE, 'The ticket price should be the same as the amount you sent'); // 유저가 송금한 양은 정확히 티켓 가격이여야 한다
         require(msg.sender.balance >= TICKET_PRICE, "You don't have as much as the ticket price"); // 유저가 티켓을 살 돈이 있는지 확인
@@ -297,7 +309,7 @@ contract HatjaeContract is TokenPrice{
         }
 
         // 티켓 지급(?)
-        ticketBox[round][msg.sender].push([_first, _second, _third, _fourth]); // 라운드 -> 지불한 사람의 주소 -> [ [_first, _second, _third, _fourth] ]
+        ticketBox[round][msg.sender].push(Ticket(msg.sender, [_first, _second, _third, _fourth], _said));
 
         // 현재 라운드 티켓 수 count
         ticketCount[round]++;
@@ -310,63 +322,64 @@ contract HatjaeContract is TokenPrice{
     // 레이싱 시작 시 스냅샷
     function takeSnapshot() public isWeekend onlyOwner {
         require(isTaked[round] == false, "Snapshots can only be taken once per round"); // 중복 촬영 방지
-        snapshot.btc= TokenPrice.getBtc();
-        snapshot.eth= TokenPrice.getEth();
-        snapshot.xrp= TokenPrice.getXrp();
-        snapshot.wemix= TokenPrice.getWemix();
-        snapshot.klay= TokenPrice.getKlay();
-        snapshot.ksp= TokenPrice.getKsp();
-        snapshot.bora= TokenPrice.getBora();
-        snapshot.orc= TokenPrice.getOrc();
-        snapshot.mbx= TokenPrice.getMbx();
-        snapshot.bnb= TokenPrice.getBnb();
+        snapshot[round].btc= TokenPrice.getBtc();
+        snapshot[round].eth= TokenPrice.getEth();
+        snapshot[round].xrp= TokenPrice.getXrp();
+        snapshot[round].wemix= TokenPrice.getWemix();
+        snapshot[round].klay= TokenPrice.getKlay();
+        snapshot[round].ksp= TokenPrice.getKsp();
+        snapshot[round].bora= TokenPrice.getBora();
+        snapshot[round].orc= TokenPrice.getOrc();
+        snapshot[round].mbx= TokenPrice.getMbx();
+        snapshot[round].bnb= TokenPrice.getBnb();
 
          // 중복 촬영 방지
         isTaked[round]=true;
 
         // 촬영완료 이벤트
-        emit take(round,snapshot);
+        emit take(round,snapshot[round]);
     }
 
 
     // 당첨자 추첨
-    //                        🤔 👇함수, 송금주소에 payable 적용 안 해도 call은 작동됨
-    function lottery() public isWeekdays onlyOwner payable{
+    function lottery() public isWeekdays onlyOwner payable returns(Result memory){
         // 당첨번호 추출
         Token[10] memory rank = getCurrentRank();
-        racingHistory[round].orderOfWinners = [rank[0].symbol, rank[1].symbol, rank[2].symbol, rank[3].symbol];
 
         // 당첨자 색출
         for(uint i=0 ; i < buyers[round].length ; i++){
             for(uint j=0 ; j < ticketBox[round][buyers[round][i]].length ; j++){
                 if(
-                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][0]))) ==
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j].order[0]))) ==
                     keccak256(abi.encodePacked((rank[0].symbol)))
                     &&
-                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][1]))) ==
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j].order[1]))) ==
                     keccak256(abi.encodePacked((rank[1].symbol)))
                     &&
-                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][2]))) ==
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j].order[2]))) ==
                     keccak256(abi.encodePacked((rank[2].symbol)))
                     &&
-                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j][3]))) ==
+                    keccak256(abi.encodePacked((ticketBox[round][buyers[round][i]][j].order[3]))) ==
                     keccak256(abi.encodePacked((rank[3].symbol)))
                 ){
-                    racingHistory[round].winners.push(buyers[round][i]);
+                    result[round].winningTickets.push(ticketBox[round][buyers[round][i]][j]);
                 }    
             }
         }
 
         // 이번 라운드 상금 기록 후 당첨금 인출
-        if (racingHistory[round].winners.length == 0){
-            racingHistory[round].prizePerWinner == 0;
+        if (result[round].winningTickets.length == 0){
+            result[round].prizeAmount == 0;
         }else{
-            racingHistory[round].prizePerWinner = address(this).balance * (100-FEE_FOR_DEV)/100 / racingHistory[round].winners.length;
+            result[round].prizeAmount == address(this).balance * (100-FEE_FOR_DEV)/100;
+            result[round].prizePerWinner = address(this).balance * (100-FEE_FOR_DEV)/100 / result[round].winningTickets.length;
+
             // 당첨자에게 송금
-            for(uint i=0 ; i < racingHistory[round].winners.length ; i++){
-                (bool success1,) = payable(racingHistory[round].winners[i]).call{value:racingHistory[round].prizePerWinner}("");
+            for(uint i=0 ; i < result[round].winningTickets.length ; i++){
+                (bool success1,) = payable(result[round].winningTickets[i].buyer).call{value:result[round].prizePerWinner}("");
                 emit transferSuccessful(success1, "to winner");
             }
+    
             // owner에게 잔금(수수료) 송금
             (bool success2,) = payable(owner).call{value: address(this).balance}("");
             emit transferSuccessful(success2, "to owner");
@@ -374,6 +387,8 @@ contract HatjaeContract is TokenPrice{
 
         // 다음 라운드로
         round++;
+
+        return result[round-1];
     }
 
 //----------------view function----------------
@@ -382,16 +397,16 @@ contract HatjaeContract is TokenPrice{
     function getCurrentRank() public view isWeekend returns(Token[10] memory){
         // 토큰 심볼과 상승률로 구성된 코인별 구조체
         // 각 토큰 수익률 계산 : [ (현재가격 - 매수가격) * 10^(나타낼 소수점 자리 수) / 매수가격 * 100 ] 
-        Token memory btc = Token("btc",(int(TokenPrice.getBtc()) - int(snapshot.btc))*int(10**decimals) / int(snapshot.btc) * 100);
-        Token memory eth = Token("eth",(int(TokenPrice.getEth()) - int(snapshot.eth))*int(10**decimals) / int(snapshot.eth) * 100);
-        Token memory xrp = Token("xrp",(int(TokenPrice.getXrp()) - int(snapshot.xrp))*int(10**decimals) / int(snapshot.xrp) * 100);
-        Token memory wemix = Token("wemix",(int(TokenPrice.getKlay()) - int(snapshot.klay))*int(10**decimals) / int(snapshot.klay) * 100);
-        Token memory klay = Token("klay",(int(TokenPrice.getWemix()) - int(snapshot.wemix))*int(10**decimals) / int(snapshot.wemix) * 100);
-        Token memory ksp = Token("ksp",(int(TokenPrice.getKsp()) - int(snapshot.ksp))*int(10**decimals) / int(snapshot.ksp) * 100);
-        Token memory bora = Token("bora",(int(TokenPrice.getBora()) - int(snapshot.bora))*int(10**decimals) / int(snapshot.bora) * 100);
-        Token memory orc = Token("orc",(int(TokenPrice.getOrc()) - int(snapshot.orc))*int(10**decimals) / int(snapshot.orc) * 100);
-        Token memory mbx = Token("mbx",(int(TokenPrice.getMbx()) - int(snapshot.mbx))*int(10**decimals) / int(snapshot.mbx) * 100);
-        Token memory bnb = Token("bnb",(int(TokenPrice.getBnb()) - int(snapshot.bnb))*int(10**decimals) / int(snapshot.bnb) * 100);
+        Token memory btc = Token("btc",(int(TokenPrice.getBtc()) - int(snapshot[round].btc))*int(10**decimals) / int(snapshot[round].btc) * 100);
+        Token memory eth = Token("eth",(int(TokenPrice.getEth()) - int(snapshot[round].eth))*int(10**decimals) / int(snapshot[round].eth) * 100);
+        Token memory xrp = Token("xrp",(int(TokenPrice.getXrp()) - int(snapshot[round].xrp))*int(10**decimals) / int(snapshot[round].xrp) * 100);
+        Token memory wemix = Token("wemix",(int(TokenPrice.getKlay()) - int(snapshot[round].klay))*int(10**decimals) / int(snapshot[round].klay) * 100);
+        Token memory klay = Token("klay",(int(TokenPrice.getWemix()) - int(snapshot[round].wemix))*int(10**decimals) / int(snapshot[round].wemix) * 100);
+        Token memory ksp = Token("ksp",(int(TokenPrice.getKsp()) - int(snapshot[round].ksp))*int(10**decimals) / int(snapshot[round].ksp) * 100);
+        Token memory bora = Token("bora",(int(TokenPrice.getBora()) - int(snapshot[round].bora))*int(10**decimals) / int(snapshot[round].bora) * 100);
+        Token memory orc = Token("orc",(int(TokenPrice.getOrc()) - int(snapshot[round].orc))*int(10**decimals) / int(snapshot[round].orc) * 100);
+        Token memory mbx = Token("mbx",(int(TokenPrice.getMbx()) - int(snapshot[round].mbx))*int(10**decimals) / int(snapshot[round].mbx) * 100);
+        Token memory bnb = Token("bnb",(int(TokenPrice.getBnb()) - int(snapshot[round].bnb))*int(10**decimals) / int(snapshot[round].bnb) * 100);
 
         // 배열에 넣은 후
         Token[10] memory tempRank = [btc,eth,xrp,klay,wemix,ksp,bora,orc,mbx,bnb];
@@ -409,40 +424,48 @@ contract HatjaeContract is TokenPrice{
         return tempRank;
     }
 
-    // 현재 라운드의 자신의 티켓들 보기
-    function checkMyTickets() public view returns(string[4][] memory){ 
-        return ticketBox[round][msg.sender];
-    }
-    
-    // 현재 라운드의 참가자 수 보기
-    function getNumberOfBuyer() public view returns(uint){
-        return buyers[round].length;
-    }
-
-    // 현재 라운드의 티켓 수 보기
-    function getNumberOfTicket() public view returns(uint){
-        return ticketCount[round];
-    }
-
-    //------------------forTest------------------
-
+    // 현재 라운드 확인
     function getCurrentRound() public view returns(uint){
         return round;
     }
 
-    function getBuyers() public view returns(address[] memory){
-        return buyers[round];
-    }
-
+    // 현재 라운드 스냅샷 촬영 여부 확인
     function istaked() public view returns(bool){
         return isTaked[round];
     }
 
-    function getWinners(uint _round) public view returns(address[] memory){
-        return racingHistory[_round].winners;
+    // 해당 라운드의 자신의 티켓들 보기
+    function checkMyTickets(uint _round) public view notStarted(_round) returns(Ticket[] memory){ 
+        return ticketBox[_round][msg.sender];
+    }
+    
+    // 해당 라운드의 참가자 수 보기
+    function getNumberOfBuyer(uint _round) public view notStarted(_round) returns(uint){
+        return buyers[_round].length;
     }
 
-    function getPrizePerWinner(uint _round) public view returns(uint){
-        return racingHistory[_round].prizePerWinner;
+    // 해당 라운드의 티켓 수 보기
+    function getNumberOfTicket(uint _round) public view notStarted(_round) returns(uint){
+        return ticketCount[_round];
+    }
+
+    // 해당 라운드의 참가자들 보기
+    function getBuyers(uint _round) public view notStarted(_round) returns(address[] memory){
+        return buyers[_round];
+    }
+
+    // 해당 라운드 당첨 티켓들 보기
+    function getWinningTickets(uint _round) public view notFinished(_round) returns(Ticket[] memory){
+        return result[_round].winningTickets;
+    }
+
+    // 해당 라운드 인당 상금 보기
+    function getPrizePerWinner(uint _round) public view notFinished(_round) returns(uint){
+        return result[_round].prizePerWinner;
+    }
+
+    // 해당 라운드 총 상금 보기
+    function getPrizeAmount(uint _round) public view notFinished(_round) returns(uint){
+        return result[_round].prizeAmount;
     }
 }

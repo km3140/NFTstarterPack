@@ -252,7 +252,7 @@ contract HatjaeContract is TokenPrice{
     // 상승률 반환용 구조체 (getCurrentRank의 로컬변수로 사용)
     struct Token{
         string symbol;
-        int rate; 
+        int rate;
     }
 
 //---------------modifier---------------
@@ -321,7 +321,9 @@ contract HatjaeContract is TokenPrice{
 
     // 레이싱 시작 시 스냅샷
     function takeSnapshot() public isWeekend onlyOwner {
-        require(isTaked[round] == false, "Snapshots can only be taken once per round"); // 중복 촬영 방지
+        // 중복 촬영 방지
+        require(isTaked[round] == false, "Snapshots can only be taken once per round");
+
         snapshot[round].btc= TokenPrice.getBtc();
         snapshot[round].eth= TokenPrice.getEth();
         snapshot[round].xrp= TokenPrice.getXrp();
@@ -333,10 +335,10 @@ contract HatjaeContract is TokenPrice{
         snapshot[round].mbx= TokenPrice.getMbx();
         snapshot[round].bnb= TokenPrice.getBnb();
 
-         // 중복 촬영 방지
+        // 스냅샷 중복 촬영 방지
         isTaked[round]=true;
 
-        // 촬영완료 이벤트
+        // 스냅샷 촬영완료 이벤트
         emit take(round,snapshot[round]);
     }
 
@@ -369,7 +371,8 @@ contract HatjaeContract is TokenPrice{
 
         // 이번 라운드 상금 기록 후 당첨금 인출
         if (result[round].winningTickets.length == 0){
-            result[round].prizeAmount == 0;
+            result[round].prizeAmount = 0;
+            result[round].prizePerWinner = 0;
         }else{
             result[round].prizeAmount = address(this).balance * (100-FEE_FOR_DEV)/100;
             result[round].prizePerWinner = address(this).balance * (100-FEE_FOR_DEV)/100 / result[round].winningTickets.length;

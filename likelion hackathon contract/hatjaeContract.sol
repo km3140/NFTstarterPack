@@ -192,7 +192,10 @@ contract HatjaeContract is TokenPrice{
     uint TICKET_PRICE = 5e18; // e17 = *10**17, 1e17peb == 0.1Klay
 
     // 당첨자 나올 시 수수료 ( n%라면 n입력 )
-    uint FEE_FOR_DEV = 5;  
+    uint PERCENT_FOR_DEV = 5;  
+
+    // 다음 라운드를 위해 남겨놓을 잔금 ( n%라면 n입력 )
+    uint PERCENT_FOR_NEXT_ROUND = 10;
 
     // 라운드 (1주일마다++)
     uint round = 0; // 0라운드부터 시작(?) (배열 인덱스랑 맞추려고)
@@ -374,8 +377,9 @@ contract HatjaeContract is TokenPrice{
         if (result[round].winningTickets.length == 0){
             result[round].prizeAmount == 0;
         }else{
-            result[round].prizeAmount = address(this).balance * (100-FEE_FOR_DEV)/100;
+            result[round].prizeAmount = address(this).balance * (100 - PERCENT_FOR_DEV - PERCENT_FOR_NEXT_ROUND)/100;
             uint prizePerWinner = result[round].prizeAmount / result[round].winningTickets.length;
+            uint feeForDev = (address(this).balance - result[round].prizeAmount) * PERCENT_FOR_DEV / (PERCENT_FOR_DEV + PERCENT_FOR_NEXT_ROUND);
 
             // 당첨자에게 송금
             for(uint i=0 ; i < result[round].winningTickets.length ; i++){
@@ -383,8 +387,8 @@ contract HatjaeContract is TokenPrice{
                 emit transferSuccessful(success1, "to winner");
             }
     
-            // owner에게 잔금(수수료) 송금
-            (bool success2,) = payable(owner).call{value: address(this).balance}("");
+            // owner에게 수수료 송금
+            (bool success2,) = payable(owner).call{value: feeForDev}("");
             emit transferSuccessful(success2, "to owner");
         }
 

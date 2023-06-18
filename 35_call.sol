@@ -43,7 +43,7 @@ contract caller{
   }
 
   // 2. 외부 스마트 컨트랙 함수 부르기 
-  function callMethod(address _contractAddr, uint256 _num1, uint256 _num2) public {
+  function callMethod(address _contractAddr, uint256 _num1, uint256 _num2) public {                             // 👇 uint(x) uint256(o) 256 명시!
     (bool success, bytes memory outputFromCalledFunction) = _contractAddr.call(abi.encodeWithSignature("addNumber(uint256,uint256)", _num1, _num2));
                                                                             // 👆  ABI란?
                                                                             //      이더리움 환경 안에서 스마트 컨트랙을 상호작용 시키는 표준
